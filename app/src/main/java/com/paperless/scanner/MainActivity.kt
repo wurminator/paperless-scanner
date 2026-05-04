@@ -37,8 +37,11 @@ import com.paperless.scanner.ui.theme.LocalWindowSizeClass
 import com.paperless.scanner.ui.theme.PaperlessScannerTheme
 import com.paperless.scanner.ui.theme.ThemeMode
 import com.paperless.scanner.util.DeepLinkAction
+import com.paperless.scanner.quickupload.QuickUploadHandler
 import com.paperless.scanner.util.DeepLinkHandler
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -60,6 +63,11 @@ class MainActivity : FragmentActivity() {
 
     @Inject
     lateinit var crashlyticsHelper: CrashlyticsHelper
+
+    @Inject
+    lateinit var quickUploadHandler: QuickUploadHandler
+
+    private val activityScope = CoroutineScope(Dispatchers.Main)
 
     /** Pending deep link action from widget or external source. Consumed once by NavGraph. */
     private val _pendingDeepLink = MutableStateFlow<DeepLinkAction?>(null)
@@ -84,6 +92,17 @@ class MainActivity : FragmentActivity() {
         requestNotificationPermission()
 
         val sharedUris = handleShareIntent(intent)
+
+        // Quick upload: share directly to Paperless without UI, then close app
+        if (sharedUris.isNotEmpty()) {
+            activityScope.launch {
+                quickUploadHandler.handleQuickUpload(sharedUris)
+                finish()
+            }
+            return  // Don't setContent — app closes after upload is queued
+        }
+
+        val navSharedUris = emptyList<Uri>()  // Quick upload handles all shares now
 
         // Parse deep link from launch intent (widget taps)
         _pendingDeepLink.value = DeepLinkHandler.parseIntent(intent)
@@ -151,7 +170,7 @@ class MainActivity : FragmentActivity() {
                     PaperlessNavGraph(
                         navController = navController,
                         startDestination = startDestination,
-                        sharedUris = sharedUris,
+                        sharedUris = navSharedUris,
                         pendingDeepLink = pendingDeepLinkAction,
                         onDeepLinkConsumed = { consumeDeepLink() },
                         tokenManager = tokenManager,
@@ -186,6 +205,17 @@ class MainActivity : FragmentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+
+        // Quick upload when app is already running
+        val sharedUris = handleShareIntent(intent)
+        if (sharedUris.isNotEmpty()) {
+            activityScope.launch {
+                quickUploadHandler.handleQuickUpload(sharedUris)
+                finish()
+            }
+            return
+        }
+
         // Handle deep links when app is already running (singleTask launch mode)
         val deepLinkAction = DeepLinkHandler.parseIntent(intent)
         if (deepLinkAction != null) {
@@ -199,9 +229,11 @@ class MainActivity : FragmentActivity() {
 
         return when (intent.action) {
             Intent.ACTION_SEND -> {
-                // Single image or PDF
+                // Accept images, PDFs, text files, and other document types
                 if (intent.type?.startsWith("image/") == true ||
-                    intent.type == "application/pdf"
+                    intent.type?.startsWith("text/") == true ||
+                    intent.type == "application/pdf" ||
+                    intent.type?.startsWith("application/") == true
                 ) {
                     @Suppress("DEPRECATION")
                     val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -215,8 +247,12 @@ class MainActivity : FragmentActivity() {
                 }
             }
             Intent.ACTION_SEND_MULTIPLE -> {
-                // Multiple images
-                if (intent.type?.startsWith("image/") == true) {
+                // Multiple files — accept all document types
+                if (intent.type?.startsWith("image/") == true ||
+                    intent.type?.startsWith("text/") == true ||
+                    intent.type == "application/pdf" ||
+                    intent.type?.startsWith("application/") == true
+                ) {
                     @Suppress("DEPRECATION")
                     val uris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)

@@ -7,59 +7,38 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Central manager for Premium feature access control.
- *
- * This is the single source of truth for whether a Premium feature is available.
- *
- * ## PHASE 2: Production Mode (ACTIVE)
- * AI features are ONLY available with active Premium subscription.
- * - Uses billingManager.isSubscriptionActive
- * - No debug build bypass
- * - No debug mode bypass
- *
- * ARCHITECTURE: Subscription-Based Access
- * - Free users: Paperless API suggestions + Local tag matching only
- * - Premium users: Firebase AI + Paperless API + Local matching
- *
- * Usage:
- * ```kotlin
- * if (premiumFeatureManager.isFeatureAvailable(PremiumFeature.AI_ANALYSIS)) {
- *     // Use Firebase AI (Premium only)
- * } else {
- *     // Fallback to free alternatives
- * }
- * ```
- *
- * @see PremiumFeature for available Premium features
- * @see BillingManager for subscription management
- */
 @Singleton
 class PremiumFeatureManager @Inject constructor(
     private val billingManager: BillingManager,
     private val tokenManager: TokenManager
 ) {
 
+    companion object {
+        /**
+         * Set to `true` to re-enable Google Play Billing & subscription gating.
+         * When `false`, all Premium features are unlocked — no billing required.
+         */
+        const val BILLING_ENABLED = false
+    }
+
     /**
      * Whether premium features are accessible.
-     * PHASE 2 (ACTIVE): Based on actual subscription status from BillingManager.
-     *
-     * No bypass mechanisms:
-     * - Debug builds DO NOT get free access
-     * - Debug mode (7-tap) DOES NOT grant access
-     * - ONLY active subscription grants access
+     * BILLING_ENABLED=false → always true (all features unlocked).
+     * BILLING_ENABLED=true  → based on actual subscription status.
      */
-    val isPremiumAccessEnabled: Flow<Boolean> = billingManager.isSubscriptionActive
+    val isPremiumAccessEnabled: Flow<Boolean> =
+        if (BILLING_ENABLED) billingManager.isSubscriptionActive else flowOf(true)
 
     /**
      * Sync check for premium access status.
-     * PHASE 2 (ACTIVE): Returns actual subscription status.
      */
-    private fun isPremiumAccessEnabledSync(): Boolean = billingManager.isSubscriptionActiveSync()
+    private fun isPremiumAccessEnabledSync(): Boolean =
+        if (BILLING_ENABLED) billingManager.isSubscriptionActiveSync() else true
 
     /**
      * Whether AI suggestions are enabled and available.
@@ -69,12 +48,18 @@ class PremiumFeatureManager @Inject constructor(
      *
      * PHASE 2 (ACTIVE): Requires actual subscription.
      */
-    val isAiEnabled: Flow<Boolean> = combine(
-        billingManager.isSubscriptionActive,
-        tokenManager.aiSuggestionsEnabled
-    ) { hasAccess, userEnabled ->
-        hasAccess && userEnabled
-    }
+    val isAiEnabled: Flow<Boolean> =
+        if (BILLING_ENABLED) {
+            combine(
+                billingManager.isSubscriptionActive,
+                tokenManager.aiSuggestionsEnabled
+            ) { hasAccess, userEnabled ->
+                hasAccess && userEnabled
+            }
+        } else {
+            // Billing disabled: only respect user preference
+            tokenManager.aiSuggestionsEnabled
+        }
 
     /**
      * Whether AI can suggest new tags.
@@ -102,18 +87,23 @@ class PremiumFeatureManager @Inject constructor(
      * @return true if feature is available (subscription + preference enabled)
      */
     fun isFeatureAvailable(feature: PremiumFeature): Boolean {
+        if (!BILLING_ENABLED) {
+            // All features unlocked — only respect user preferences
+            return when (feature) {
+                PremiumFeature.AI_ANALYSIS -> isAiSuggestionsEnabledSync()
+                PremiumFeature.AI_NEW_TAGS -> isAiSuggestionsEnabledSync() && isAiNewTagsEnabledSync()
+                PremiumFeature.AI_SUMMARY -> isAiSuggestionsEnabledSync()
+            }
+        }
         return when (feature) {
             PremiumFeature.AI_ANALYSIS -> {
-                // PHASE 2 (ACTIVE): Subscription check + user preference
                 isPremiumAccessEnabledSync() && isAiSuggestionsEnabledSync()
             }
             PremiumFeature.AI_NEW_TAGS -> {
-                // Requires AI analysis + new tags enabled
                 isPremiumAccessEnabledSync() && isAiSuggestionsEnabledSync() && isAiNewTagsEnabledSync()
             }
             PremiumFeature.AI_SUMMARY -> {
-                // Future feature - not implemented yet
-                false
+                false // Not implemented yet — enable when ready
             }
         }
     }

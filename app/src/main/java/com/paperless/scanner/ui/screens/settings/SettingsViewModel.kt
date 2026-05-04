@@ -91,7 +91,11 @@ class SettingsViewModel @Inject constructor(
             val analyticsConsent = tokenManager.analyticsConsent.first() ?: false
             val themeModeKey = tokenManager.themeMode.first()
             val themeMode = ThemeMode.entries.find { it.key == themeModeKey } ?: ThemeMode.SYSTEM
-            val isPremiumActive = billingManager.isSubscriptionActiveSync()
+            val isPremiumActive = if (PremiumFeatureManager.BILLING_ENABLED) {
+                billingManager.isSubscriptionActiveSync()
+            } else {
+                true // Billing disabled = all features unlocked
+            }
             val aiSuggestionsEnabled = tokenManager.aiSuggestionsEnabled.first()
             val aiNewTagsEnabled = tokenManager.aiNewTagsEnabled.first()
             val aiWifiOnly = tokenManager.aiWifiOnly.first()
@@ -119,14 +123,17 @@ class SettingsViewModel @Inject constructor(
 
             // Observe Premium status changes with expiry date
             launch {
-                billingManager.subscriptionStatus.collect { status ->
-                    val isPremium = status is SubscriptionStatus.ACTIVE || status is SubscriptionStatus.GRACE_PERIOD
-                    val expiryDate = when (status) {
-                        is SubscriptionStatus.ACTIVE -> formatExpiryDate(status.expiryDateMs)
-                        else -> null
+                if (PremiumFeatureManager.BILLING_ENABLED) {
+                    billingManager.subscriptionStatus.collect { status ->
+                        val isPremium = status is SubscriptionStatus.ACTIVE || status is SubscriptionStatus.GRACE_PERIOD
+                        val expiryDate = when (status) {
+                            is SubscriptionStatus.ACTIVE -> formatExpiryDate(status.expiryDateMs)
+                            else -> null
+                        }
+                        _uiState.update { it.copy(isPremiumActive = isPremium, premiumExpiryDate = expiryDate) }
                     }
-                    _uiState.update { it.copy(isPremiumActive = isPremium, premiumExpiryDate = expiryDate) }
                 }
+                // else: isPremiumActive stays true (set above), no observer needed
             }
 
             // Observe AI preferences changes
