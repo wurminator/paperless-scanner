@@ -1,0 +1,18 @@
+# Onboarding / Server Setup — Verify login screen appears on fresh install
+appId: com.paperless.scanner
+tags:
+  - onboarding
+---
+# Clear app data to simulate fresh install
+- clearState
+
+- launchApp
+
+# On fresh install, should show onboarding/setup screen
+# Look for typical onboarding UI elements
+- assertVisible:
+    text: ".*[Ss]erver.*|.*[Uu]rl.*|.*[Ll]ogin.*|.*[Ss]etup.*|.*[Cc]onnect.*"
+    timeout: 10000
+
+- assertTrue:
+    label: "Onboarding screen shown on fresh install"

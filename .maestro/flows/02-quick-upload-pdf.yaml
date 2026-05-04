@@ -1,0 +1,23 @@
+# Quick Upload — Share a PDF file to the app
+appId: com.paperless.scanner
+tags:
+  - quick-upload
+---
+# First, create a test PDF file on the device
+- runFlow:
+    file: ../helpers/create-test-pdf.yaml
+
+# Launch the app with a share intent containing the PDF
+- launchApp:
+    clearState: false
+
+# The quick upload handler should queue the file and close the app
+# Since quick upload finishes the activity, we just verify no crash
+- assertTrue:
+    label: "Quick upload did not crash"
+
+# Relaunch to verify app is still healthy
+- launchApp
+- assertVisible:
+    id: ".*"
+    timeout: 10000

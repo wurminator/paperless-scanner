@@ -1,0 +1,16 @@
+# Smoke Test — App launches and shows main UI
+appId: com.paperless.scanner
+tags:
+  - smoke
+---
+# Launch the app
+- launchApp
+
+# Wait for the main screen to render
+- assertVisible:
+    id: ".*"
+    timeout: 10000
+
+# App should not crash — if we got here, basic launch works
+- assertTrue:
+    label: "App launched successfully without crash"

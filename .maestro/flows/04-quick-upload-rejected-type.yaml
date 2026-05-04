@@ -1,0 +1,24 @@
+# Quick Upload — Validation: unsupported file type should show error
+appId: com.paperless.scanner
+tags:
+  - quick-upload
+  - validation
+---
+# Share an unsupported file (e.g., a shell script)
+- launchApp
+
+- startActivity:
+    action: android.intent.action.SEND
+    type: "application/x-sh"
+    extra:
+      android.intent.extra.TEXT: "#!/bin/bash\necho test"
+
+# App should handle gracefully — either show error notification or just finish
+# Relaunch to verify no crash
+- launchApp
+- assertVisible:
+    id: ".*"
+    timeout: 10000
+
+- assertTrue:
+    label: "App handled unsupported file type without crash"

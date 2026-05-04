@@ -1,0 +1,10 @@
+# Full test suite — run with: maestro test .maestro/test-suite.yaml
+appId: com.paperless.scanner
+name: Paperless Scanner — Full Test Suite
+
+flows:
+  - flows/01-smoke-launch.yaml
+  - flows/02-quick-upload-pdf.yaml
+  - flows/03-quick-upload-image.yaml
+  - flows/04-quick-upload-rejected-type.yaml
+  - flows/05-onboarding-fresh-install.yaml

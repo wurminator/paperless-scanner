@@ -1,0 +1,14 @@
+# Maestro Test Configuration
+# https://maestro.mobile.dev
+
+appId: com.paperless.scanner
+
+# Path to the APK for installation (relative to project root)
+# Override with: maestro test --apk path/to/app.apk
+apk: app/build/outputs/apk/debug/app-debug.apk
+
+# Tags for organizing test runs
+tags:
+  - smoke
+  - quick-upload
+  - onboarding
