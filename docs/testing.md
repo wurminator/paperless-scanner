@@ -13,11 +13,23 @@ export PATH="$PATH:$HOME/.maestro/bin"
 echo 'export PATH="$PATH:$HOME/.maestro/bin"' >> ~/.bashrc
 ```
 
-## Prerequisites
+## Headless Emulator (Server)
 
-- Built APK: `./gradlew assembleDebug`
-- Running Android Emulator **or** connected physical device with USB debugging
-- ADB in PATH (`~/android-sdk/platform-tools/`)
+```bash
+# Start emulator (headless, needs KVM group)
+sg kvm -c "export JAVA_HOME=~/android-build/jdk-17.0.19+10 && \
+  export ANDROID_HOME=~/android-sdk && \
+  export PATH=\$JAVA_HOME/bin:\$ANDROID_HOME/emulator:\$ANDROID_HOME/platform-tools:\$PATH && \
+  emulator -avd test_device -no-window -no-audio -no-boot-anim \
+    -gpu swiftshader_indirect -memory 2048 -no-snapshot -wipe-data &"
+
+# Wait for boot
+adb wait-for-device
+adb shell getprop sys.boot_completed  # should print "1"
+
+# Install APK
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
 
 ## Running Tests
 
@@ -25,16 +37,14 @@ echo 'export PATH="$PATH:$HOME/.maestro/bin"' >> ~/.bashrc
 # Build the APK first
 ./gradlew assembleDebug
 
+# Install on emulator
+adb install app/build/outputs/apk/debug/app-debug.apk
+
+# Run all flows
+maestro test .maestro/flows/
+
 # Run a single flow
 maestro test .maestro/flows/01-smoke-launch.yaml
-
-# Run all flows (full suite)
-maestro test .maestro/test-suite.yaml
-
-# Run with specific APK path
-maestro test --apk app/build/outputs/apk/debug/app-debug.apk .maestro/test-suite.yaml
-
-# Run only tagged flows (future: maestro supports --tag filter)
 ```
 
 ## Test Structure
@@ -42,15 +52,15 @@ maestro test --apk app/build/outputs/apk/debug/app-debug.apk .maestro/test-suite
 ```
 .maestro/
 ├── config.yaml              # App ID, APK path, tags
-├── test-suite.yaml          # Full suite — runs all flows
+├── test-suite.yaml          # Suite definition
 ├── helpers/
 │   └── create-test-pdf.yaml # Shared helper: creates test PDF
 └── flows/
     ├── 01-smoke-launch.yaml              # App launches without crash
-    ├── 02-quick-upload-pdf.yaml          # Share PDF → quick upload
-    ├── 03-quick-upload-image.yaml        # Share image → quick upload
-    ├── 04-quick-upload-rejected-type.yaml # Unsupported type → graceful error
-    └── 05-onboarding-fresh-install.yaml  # Fresh install shows setup
+    ├── 02-quick-upload-pdf.yaml          # App health check (PDF)
+    ├── 03-quick-upload-image.yaml        # App health check (image)
+    ├── 04-quick-upload-rejected-type.yaml # App health check (blocked type)
+    └── 05-onboarding-fresh-install.yaml  # Fresh install → analytics consent → setup
 ```
 
 ## Writing New Flows
@@ -58,7 +68,7 @@ maestro test --apk app/build/outputs/apk/debug/app-debug.apk .maestro/test-suite
 Flows are YAML files in `.maestro/flows/`. Key commands:
 
 ```yaml
-appId: com.paperless.scanner
+appId: com.paperless.scanner.debug
 tags:
   - my-tag
 ---
@@ -66,18 +76,15 @@ tags:
 - tapOn: "Upload"              # Tap text matching "Upload"
 - assertVisible: "Documents"   # Verify text is on screen
 - back                         # Press system back
-- assertTrue:                  # Custom assertion
-    label: "Something happened"
 ```
 
-### Share Intent Testing
+### Waiting for elements
 
 ```yaml
-- startActivity:
-    action: android.intent.action.SEND
-    type: "application/pdf"
-    extra:
-      android.intent.extra.STREAM: "content://..."
+- extendedWaitUntil:
+    visible:
+      text: "Welcome"
+    timeout: 10000
 ```
 
 ### Device State
@@ -87,15 +94,15 @@ tags:
 - takeScreenshot: /tmp/maestro-screenshot.png
 ```
 
+## Troubleshooting
+
+- **"No device found"**: Start emulator, verify with `adb devices`
+- **"Unable to launch app"**: Debug build uses `com.paperless.scanner.debug` as appId
+- **KVM permissions**: Must be in `kvm` group — `sudo usermod -aG kvm $USER`, then relogin
+- **Emulator CPU error**: Use `sg kvm -c "emulator ..."` if session doesn't have kvm group yet
+
 ## CI Integration (Future)
 
-For headless CI without emulator, Maestro Cloud is available:
 ```bash
 maestro cloud --apiKey <KEY> .maestro/test-suite.yaml
 ```
-
-## Troubleshooting
-
-- **"No device found"**: Start emulator or connect device, verify with `adb devices`
-- **Flaky tests**: Add `timeout:` to `assertVisible` (default 10s)
-- **Share intent tests**: Maestro's intent support is limited — some flows may need `adb shell am broadcast` workarounds

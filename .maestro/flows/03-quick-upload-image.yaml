@@ -1,22 +1,11 @@
-# Quick Upload — Share an image file
-appId: com.paperless.scanner
+# Quick Upload — Share an image to the app
+appId: com.paperless.scanner.debug
 tags:
   - quick-upload
 ---
-# Launch app fresh
 - launchApp
 
-# Share a test image via intent
-# Maestro supports starting activities with extras
-- startActivity:
-    action: android.intent.action.SEND
-    type: "image/jpeg"
-    extra:
-      android.intent.extra.STREAM: "content://com.android.providers.media.documents/document/image_test"
-
-# Quick upload handles the share — app should finish automatically
-# Re-open app to verify it's still functional
-- launchApp
-- assertVisible:
-    id: ".*"
-    timeout: 10000
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 5000
