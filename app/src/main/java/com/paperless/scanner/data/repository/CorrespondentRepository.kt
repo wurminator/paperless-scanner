@@ -15,6 +15,7 @@ import com.paperless.scanner.domain.model.Correspondent
 import com.paperless.scanner.domain.model.Document
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.paperless.scanner.data.cache.CachePolicy
 import javax.inject.Inject
 
 /**
@@ -90,25 +91,30 @@ class CorrespondentRepository @Inject constructor(
      */
     suspend fun getCorrespondents(forceRefresh: Boolean = false): Result<List<Correspondent>> {
         return try {
-            // Offline-First: Try cache first unless forceRefresh
-            if (!forceRefresh || !networkMonitor.checkOnlineStatus()) {
-                val cached = cachedCorrespondentDao.getAllCorrespondents()
-                if (cached.isNotEmpty()) {
+            val cached = cachedCorrespondentDao.getAllCorrespondents()
+            
+            // Smart cache: return cache if fresh and not forced refresh
+            if (!forceRefresh && cached.isNotEmpty()) {
+                val newestSync = cached.maxOf { it.lastSyncedAt }
+                if (CachePolicy.isFresh(newestSync)) {
                     return Result.success(cached.map { it.toCachedDomain() })
                 }
             }
-
-            // Network fetch (if online and forceRefresh or cache empty)
-            if (networkMonitor.checkOnlineStatus()) {
-                val response = api.getCorrespondents(page = 1, pageSize = 100)
-                // Update cache
-                val cachedEntities = response.results.map { it.toCachedEntity() }
-                cachedCorrespondentDao.insertAll(cachedEntities)
-                Result.success(response.results.toDomain())
-            } else {
-                // Offline, no cache
-                Result.success(emptyList())
+            
+            // Offline fallback: return stale cache if no network
+            if (!networkMonitor.checkOnlineStatus()) {
+                return if (cached.isNotEmpty()) {
+                    Result.success(cached.map { it.toCachedDomain() })
+                } else {
+                    Result.success(emptyList())
+                }
             }
+            
+            // Network fetch
+            val response = api.getCorrespondents(page = 1, pageSize = 100)
+            val cachedEntities = response.results.map { it.toCachedEntity() }
+            cachedCorrespondentDao.insertAll(cachedEntities)
+            Result.success(response.results.toDomain())
         } catch (e: Exception) {
             Result.failure(PaperlessException.from(e))
         }

@@ -112,7 +112,7 @@ class LabelsViewModel @Inject constructor(
         observeDocumentTypesReactively()
         observeCustomFieldsReactively()
         detectCustomFieldsAvailability()
-        refresh()
+        refresh(forceRefresh = false)  // Use TTL-cached data on startup
     }
 
     /**
@@ -376,15 +376,15 @@ class LabelsViewModel @Inject constructor(
      *
      * Loads all entity types in parallel for efficiency.
      */
-    fun refresh() {
+    fun refresh(forceRefresh: Boolean = true) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             // Load all entity types in parallel
-            val tagsDeferred = async { tagRepository.getTags(forceRefresh = true) }
-            val correspondentsDeferred = async { correspondentRepository.getCorrespondents(forceRefresh = true) }
-            val documentTypesDeferred = async { documentTypeRepository.getDocumentTypes(forceRefresh = true) }
-            val customFieldsDeferred = async { customFieldRepository.getCustomFields(forceRefresh = true) }
+            val tagsDeferred = async { tagRepository.getTags(forceRefresh = forceRefresh) }
+            val correspondentsDeferred = async { correspondentRepository.getCorrespondents(forceRefresh = forceRefresh) }
+            val documentTypesDeferred = async { documentTypeRepository.getDocumentTypes(forceRefresh = forceRefresh) }
+            val customFieldsDeferred = async { customFieldRepository.getCustomFields(forceRefresh = forceRefresh) }
 
             // Wait for all to complete
             val tagsResult = tagsDeferred.await()
