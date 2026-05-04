@@ -1310,4 +1310,18 @@
     <!-- Step-by-Step Metadata -->
     <string name="step_metadata_no_pages">No pages available</string>
     <string name="cd_page_preview">Page %1$d preview</string>
+
+    <!-- Quick Upload -->
+    <string name="quick_upload_not_logged_in">Bitte zuerst bei Paperless-ngx anmelden</string>
+    <string name="quick_upload_queued">%1$d Dokument(e) in Upload-Warteschlange</string>
+    <string name="quick_upload_channel_name">Quick Upload</string>
+    <string name="quick_upload_channel_description">Benachrichtigungen für Schnell-Uploads</string>
+    <string name="quick_upload_error_title">Upload fehlgeschlagen</string>
+    <string name="quick_upload_error_file_empty">Datei ist leer: %1$s</string>
+    <string name="quick_upload_error_file_too_large">Datei zu groß (%1$s): %2$s</string>
+    <string name="quick_upload_error_unsupported_format">Format nicht unterstützt: %1$s</string>
+    <string name="quick_upload_error_copy_failed">Datei konnte nicht gelesen werden: %1$s</string>
+    <string name="quick_upload_error_auth">Nicht eingeloggt</string>
+    <string name="quick_upload_duplicate_skipped">Duplikat übersprungen: %1$s</string>
+    <string name="quick_upload_partial_success">%1$d von %2$d Dateien in Warteschlange</string>
 </resources>
