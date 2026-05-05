@@ -31,6 +31,7 @@ import com.paperless.scanner.data.database.migrations.MIGRATION_8_9
 import com.paperless.scanner.data.database.migrations.MIGRATION_9_10
 import com.paperless.scanner.data.database.migrations.MIGRATION_10_11
 import com.paperless.scanner.data.database.migrations.MIGRATION_11_12
+import com.paperless.scanner.data.database.migrations.MIGRATION_12_13
 import com.paperless.scanner.data.datastore.TokenManager
 import com.paperless.scanner.data.network.AcceptedHostTrustManager
 import com.paperless.scanner.data.network.AcceptedHostnameVerifier
@@ -381,7 +382,8 @@ object AppModule {
             MIGRATION_8_9,
             MIGRATION_9_10,  // Trash feature: Added deletedAt timestamp
             MIGRATION_10_11, // SyncCenter feature: Added sync_history table
-            MIGRATION_11_12  // Custom Fields: Added customFields to pending_uploads
+            MIGRATION_11_12, // Custom Fields: Added customFields to pending_uploads
+            MIGRATION_12_13  // Upload Progress: Added progress, bytesTransferred, totalBytes
         )
 
         // For debug builds, allow destructive migration if migration fails

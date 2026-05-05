@@ -260,4 +260,26 @@ class UploadQueueRepository @Inject constructor(
         }
         return uris
     }
+
+    /**
+     * Update upload progress for detailed progress display.
+     * Called throttled from UploadWorker during active upload.
+     *
+     * @param id Upload database ID
+     * @param progress Upload progress 0.0..1.0
+     * @param bytesTransferred Bytes uploaded so far
+     * @param totalBytes Total file size in bytes
+     */
+    suspend fun updateProgress(id: Long, progress: Float, bytesTransferred: Long, totalBytes: Long) {
+        pendingUploadDao.updateProgress(id, progress, bytesTransferred, totalBytes)
+    }
+
+    /**
+     * Reset progress to zero (used when retrying a failed upload).
+     *
+     * @param id Upload database ID
+     */
+    suspend fun resetProgress(id: Long) {
+        pendingUploadDao.updateProgress(id, progress = 0f, bytesTransferred = 0L, totalBytes = 0L)
+    }
 }

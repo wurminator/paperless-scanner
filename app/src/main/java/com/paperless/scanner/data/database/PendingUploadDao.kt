@@ -84,4 +84,11 @@ interface PendingUploadDao {
 
     @Query("UPDATE pending_uploads SET status = 'PENDING', errorMessage = NULL WHERE status = 'FAILED' AND retryCount < :maxRetries")
     suspend fun resetFailedForRetry(maxRetries: Int = 3)
+
+    /**
+     * Update upload progress for detailed progress UI.
+     * Called throttled from UploadWorker during active upload.
+     */
+    @Query("UPDATE pending_uploads SET progress = :progress, bytesTransferred = :bytesTransferred, totalBytes = :totalBytes WHERE id = :id")
+    suspend fun updateProgress(id: Long, progress: Float, bytesTransferred: Long, totalBytes: Long)
 }

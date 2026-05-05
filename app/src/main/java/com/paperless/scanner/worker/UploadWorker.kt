@@ -23,6 +23,10 @@ import com.paperless.scanner.data.database.UploadStatus
 import com.paperless.scanner.data.database.entities.SyncHistoryEntry
 import com.paperless.scanner.data.repository.DocumentRepository
 import com.paperless.scanner.data.repository.SyncHistoryRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import com.paperless.scanner.data.repository.UploadQueueRepository
 import com.paperless.scanner.util.FileUtils
 import com.paperless.scanner.widget.WidgetUpdateWorker
@@ -47,6 +51,10 @@ class UploadWorker @AssistedInject constructor(
     // Throttling für Notification-Updates (verhindert Rate-Limiting)
     private var lastNotificationUpdate = 0L
     private var lastNotificationProgress = -1
+
+    // Throttling für DB-Progress-Updates (verhindert exzessive Room-Writes)
+    private var lastDbProgressUpdate = 0L
+    private var lastDbProgressValue = -1f
 
     override suspend fun doWork(): Result {
         createNotificationChannel()
@@ -145,8 +153,25 @@ class UploadWorker @AssistedInject constructor(
 
             uploadQueueRepository.markAsUploading(pendingUpload.id)
 
+            // Get file size and write initial totalBytes to DB for progress UI
+            val totalFileSize = if (pendingUpload.isMultiPage) {
+                uploadQueueRepository.getAllUris(pendingUpload).sumOf { uri ->
+                    FileUtils.getFileSize(uri)
+                }
+            } else {
+                FileUtils.getFileSize(Uri.parse(pendingUpload.uri))
+            }
+            uploadQueueRepository.updateProgress(
+                pendingUpload.id,
+                progress = 0f,
+                bytesTransferred = 0L,
+                totalBytes = totalFileSize
+            )
+
             // Reset throttle state für neues Dokument
             lastNotificationProgress = -1
+            lastDbProgressUpdate = 0L
+            lastDbProgressValue = -1f
 
             // Notification mit aktuellem Dokument aktualisieren
             setForeground(createProgressForegroundInfo(
@@ -175,6 +200,7 @@ class UploadWorker @AssistedInject constructor(
                                 currentDocumentName = applicationContext.getString(R.string.notification_pages_suffix, documentName, pageCount),
                                 uploadProgress = (progress * 100).toInt()
                             )
+                            updateDbProgress(pendingUpload.id, progress, totalFileSize)
                         }
                     )
                 } else {
@@ -193,6 +219,7 @@ class UploadWorker @AssistedInject constructor(
                                 currentDocumentName = documentName,
                                 uploadProgress = (progress * 100).toInt()
                             )
+                            updateDbProgress(pendingUpload.id, progress, totalFileSize)
                         }
                     )
                 }
@@ -471,5 +498,35 @@ class UploadWorker @AssistedInject constructor(
         const val PROGRESS_KEY = "upload_progress"
         const val MAX_RETRIES = 3
         private const val NOTIFICATION_THROTTLE_MS = 500L
+        private const val DB_PROGRESS_THROTTLE_MS = 1000L // Max 1 DB update per second
+        private const val DB_PROGRESS_MIN_DELTA = 0.02f  // Min 2% change for DB update
+    }
+
+    // Coroutine scope for fire-and-forget DB progress writes from non-suspend callbacks
+    private val progressScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    /**
+     * Throttled DB progress update — max 1x per second and min 2% change.
+     * Non-suspend: launches DB write in background coroutine.
+     */
+    private fun updateDbProgress(uploadId: Long, progress: Float, totalBytes: Long) {
+        val now = System.currentTimeMillis()
+        val delta = kotlin.math.abs(progress - lastDbProgressValue)
+
+        if (now - lastDbProgressUpdate < DB_PROGRESS_THROTTLE_MS && delta < DB_PROGRESS_MIN_DELTA) {
+            return
+        }
+
+        lastDbProgressUpdate = now
+        lastDbProgressValue = progress
+
+        val bytesTransferred = (progress * totalBytes).toLong()
+        progressScope.launch {
+            try {
+                uploadQueueRepository.updateProgress(uploadId, progress, bytesTransferred, totalBytes)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to update DB progress for upload $uploadId: ${e.message}")
+            }
+        }
     }
 }

@@ -33,7 +33,22 @@ data class PendingUpload(
      * - Boolean: "true" or "false"
      * - Select: the selected option value as string
      */
-    val customFields: Map<Int, String> = emptyMap()
+    val customFields: Map<Int, String> = emptyMap(),
+    /**
+     * Upload progress as a fraction 0.0..1.0.
+     * Updated by UploadWorker during active upload. 0.0 when PENDING.
+     */
+    val progress: Float = 0f,
+    /**
+     * Bytes transferred so far during upload.
+     * Updated throttled by UploadWorker during active upload.
+     */
+    val bytesTransferred: Long = 0L,
+    /**
+     * Total file size in bytes.
+     * Set when upload starts, used for progress display (e.g. "2.3 MB / 8.1 MB").
+     */
+    val totalBytes: Long = 0L
 )
 
 enum class UploadStatus {

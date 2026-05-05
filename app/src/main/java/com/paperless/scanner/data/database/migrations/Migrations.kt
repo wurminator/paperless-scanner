@@ -382,3 +382,19 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
         """)
     }
 }
+
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add progress tracking columns to pending_uploads for detailed upload progress UI
+        // progress: Float 0.0-1.0 stored as REAL, bytesTransferred/totalBytes in bytes
+        database.execSQL("""
+            ALTER TABLE pending_uploads ADD COLUMN progress REAL NOT NULL DEFAULT 0.0
+        """)
+        database.execSQL("""
+            ALTER TABLE pending_uploads ADD COLUMN bytesTransferred INTEGER NOT NULL DEFAULT 0
+        """)
+        database.execSQL("""
+            ALTER TABLE pending_uploads ADD COLUMN totalBytes INTEGER NOT NULL DEFAULT 0
+        """)
+    }
+}
