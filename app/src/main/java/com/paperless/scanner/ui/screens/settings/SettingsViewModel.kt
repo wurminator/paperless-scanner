@@ -49,8 +49,8 @@ data class SettingsUiState(
     // Premium / Subscription
     val isPremiumActive: Boolean = false,
     val premiumExpiryDate: String? = null,
-    val aiSuggestionsEnabled: Boolean = true,
-    val aiNewTagsEnabled: Boolean = true,
+    val aiSuggestionsEnabled: Boolean = false,
+    val aiNewTagsEnabled: Boolean = false,
     val aiWifiOnly: Boolean = false,
     // Debug mode (unlocked by 7x tap on version)
     val aiDebugModeEnabled: Boolean = false,

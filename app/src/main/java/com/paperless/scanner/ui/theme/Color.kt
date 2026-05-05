@@ -88,66 +88,70 @@ val md_theme_dark_scrim = Color(0xFF000000)
 
 // ============================================
 // Light Tech Precision Color Palette
-// Primary becomes background, dark becomes foreground
+// Clean White + Lime Accent - Material 3 conventions
 // ============================================
 
-// Primary Brand Color remains the same for accents
-val LightTechPrimary = DarkTechBackground  // Deep black for accents
-val LightTechOnPrimary = DarkTechPrimary   // Neon yellow text on primary
+// Primary Brand Color - Dark olive for primary buttons/text
+val LightTechPrimary = Color(0xFF4B6B00)           // Dark olive - primary accent
+val LightTechOnPrimary = Color(0xFFFFFFFF)
 
-// Background Colors - Neon Yellow/Green tones with improved contrast
-val LightTechBackground = DarkTechPrimary  // #E1FF8D - Main background
-val LightTechSurface = Color(0xFFC7E56E)   // Darker surface for better distinction from background
-val LightTechSurfaceVariant = Color(0xFFB8D85E) // Even darker for clear hierarchy
+// Background Colors - Clean whites and light grays
+val LightTechBackground = Color(0xFFFDFCF5)        // Warm off-white
+val LightTechSurface = Color(0xFFFFFFFF)            // Pure white
+val LightTechSurfaceVariant = Color(0xFFE2E3D1)    // Light warm gray
 
 // Text Colors - Dark for readability
-val LightTechOnBackground = Color(0xFF0A0A0A)
-val LightTechOnSurface = Color(0xFF0A0A0A)
-val LightTechOnSurfaceMuted = Color(0xFF3F3F46)
+val LightTechOnBackground = Color(0xFF1A1C16)
+val LightTechOnSurface = Color(0xFF1A1C16)
+val LightTechOnSurfaceMuted = Color(0xFF45483B)
 
-// Outline/Border Colors - Black for contrast on yellow background
-val LightTechOutline = Color(0xFF1A1A1A)       // Dark black for clear borders
-val LightTechOutlineVariant = Color(0xFF2A2A2A) // Slightly lighter black
+// Outline/Border Colors - Medium gray for subtle borders
+val LightTechOutline = Color(0xFF767768)
+val LightTechOutlineVariant = Color(0xFFC6C7B5)
+
+// Accent Color
+val LightTechAccentBlue = Color(0xFF2E3A59)
 
 // ============================================
 // Material 3 Light Theme Color Scheme
+// Clean White + Lime Accent
 // ============================================
 
-val md_theme_light_primary = LightTechPrimary
-val md_theme_light_onPrimary = LightTechOnPrimary
-val md_theme_light_primaryContainer = Color(0xFF1F1F1F)
-val md_theme_light_onPrimaryContainer = DarkTechPrimary
+val md_theme_light_primary = Color(0xFF4B6B00)          // Dark olive green for primary buttons/text
+val md_theme_light_onPrimary = Color(0xFFFFFFFF)          // White text on primary buttons
+val md_theme_light_primaryContainer = Color(0xFFE1FF8D)   // LIME as container - subtle accent
+val md_theme_light_onPrimaryContainer = Color(0xFF152000) // Very dark green text on lime containers
 
-val md_theme_light_secondary = LightTechPrimary
-val md_theme_light_onSecondary = LightTechOnPrimary
-val md_theme_light_secondaryContainer = LightTechSurfaceVariant
-val md_theme_light_onSecondaryContainer = LightTechOnSurface
+val md_theme_light_secondary = Color(0xFF576423)          // Muted olive for secondary
+val md_theme_light_onSecondary = Color(0xFFFFFFFF)
+val md_theme_light_secondaryContainer = Color(0xFFDAEAA0) // Soft lime for secondary containers
+val md_theme_light_onSecondaryContainer = Color(0xFF171E00)
 
-val md_theme_light_tertiary = Color(0xFF2E3A59)
-val md_theme_light_onTertiary = Color.White
-val md_theme_light_tertiaryContainer = Color(0xFF4A5A7A)
-val md_theme_light_onTertiaryContainer = Color.White
+val md_theme_light_tertiary = Color(0xFF2E3A59)           // Keep existing blue accent
+val md_theme_light_onTertiary = Color(0xFFFFFFFF)
+val md_theme_light_tertiaryContainer = Color(0xFFDCE1F0)
+val md_theme_light_onTertiaryContainer = Color(0xFF171B2E)
 
-val md_theme_light_error = DarkTechError
-val md_theme_light_onError = Color.White
+val md_theme_light_error = Color(0xFFBA1A1A)              // Standard Material error
+val md_theme_light_onError = Color(0xFFFFFFFF)
 val md_theme_light_errorContainer = Color(0xFFFFDAD6)
 val md_theme_light_onErrorContainer = Color(0xFF410002)
 
-val md_theme_light_background = LightTechBackground
-val md_theme_light_onBackground = LightTechOnBackground
+val md_theme_light_background = Color(0xFFFDFCF5)         // Warm off-white background
+val md_theme_light_onBackground = Color(0xFF1A1C16)       // Near-black text
 
-val md_theme_light_surface = LightTechSurface
-val md_theme_light_onSurface = LightTechOnSurface
-val md_theme_light_surfaceVariant = LightTechSurfaceVariant
-val md_theme_light_onSurfaceVariant = LightTechOnSurfaceMuted
+val md_theme_light_surface = Color(0xFFFFFFFF)            // Pure white surfaces
+val md_theme_light_onSurface = Color(0xFF1A1C16)          // Near-black text
+val md_theme_light_surfaceVariant = Color(0xFFE2E3D1)     // Light warm gray for cards/dividers
+val md_theme_light_onSurfaceVariant = Color(0xFF45483B)   // Medium gray for secondary text
 
-val md_theme_light_outline = LightTechOutline
-val md_theme_light_outlineVariant = LightTechOutlineVariant
+val md_theme_light_outline = Color(0xFF767768)            // Medium gray borders
+val md_theme_light_outlineVariant = Color(0xFFC6C7B5)     // Light gray borders
 
-val md_theme_light_inverseSurface = DarkTechSurface
-val md_theme_light_inverseOnSurface = DarkTechOnSurface
-val md_theme_light_inversePrimary = DarkTechPrimary
+val md_theme_light_inverseSurface = Color(0xFF2F312A)     // Dark for inverse elements
+val md_theme_light_inverseOnSurface = Color(0xFFF1F1E5)   // Light text on inverse
+val md_theme_light_inversePrimary = Color(0xFFC5E86C)     // Brighter lime for inverse context
 
-val md_theme_light_surfaceTint = LightTechPrimary
+val md_theme_light_surfaceTint = Color(0xFF4B6B00)        // Match primary
 val md_theme_light_scrim = Color(0xFF000000)
 

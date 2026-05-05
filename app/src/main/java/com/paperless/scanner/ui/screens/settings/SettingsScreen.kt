@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Analytics
@@ -191,84 +192,47 @@ fun SettingsScreen(
             }
         }
 
-        // Premium / AI Assistant Section
+        // Premium / AI Assistant Section — DISABLED (coming soon)
         SettingsSection(title = stringResource(R.string.premium_section_title)) {
-            // Premium Status Card
-            Row(
+            // AI Assistant — disabled overlay
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(
-                        onClick = {
-                            if (!uiState.isPremiumActive) {
-                                showPremiumUpgradeSheet = true
-                            }
-                        }
-                    )
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .alpha(0.4f)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.AutoAwesome,
-                    contentDescription = stringResource(R.string.premium_section_title),
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(R.string.premium_section_title),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                        if (uiState.isPremiumActive) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.premium_badge),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        }
-                    }
-                    val expiryDate = uiState.premiumExpiryDate
-                    Text(
-                        text = if (uiState.isPremiumActive) {
-                            if (!expiryDate.isNullOrBlank())
-                                stringResource(R.string.premium_status_active, expiryDate)
-                            else
-                                stringResource(R.string.premium_status_active_no_date)
-                        } else {
-                            stringResource(R.string.premium_status_inactive)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                if (!uiState.isPremiumActive) {
+                // Premium Status Card (non-clickable)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
-                        imageVector = Icons.Filled.Lock,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        imageVector = Icons.Filled.AutoAwesome,
+                        contentDescription = stringResource(R.string.premium_section_title),
+                        modifier = Modifier.size(24.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-            }
 
-            // AI Suggestions Toggle (only show if Premium active)
-            if (uiState.isPremiumActive) {
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.premium_section_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Text(
+                            text = "Coming soon",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Grayed-out toggles (non-functional)
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     color = MaterialTheme.colorScheme.outlineVariant
@@ -278,8 +242,8 @@ fun SettingsScreen(
                     icon = Icons.Filled.AutoAwesome,
                     title = stringResource(R.string.premium_settings_ai_suggestions),
                     subtitle = stringResource(R.string.premium_settings_ai_suggestions_desc),
-                    checked = uiState.aiSuggestionsEnabled,
-                    onCheckedChange = { viewModel.setAiSuggestionsEnabled(it) }
+                    checked = false,
+                    onCheckedChange = { }
                 )
 
                 HorizontalDivider(
@@ -291,8 +255,8 @@ fun SettingsScreen(
                     icon = Icons.Filled.Wifi,
                     title = stringResource(R.string.premium_settings_wifi_only),
                     subtitle = stringResource(R.string.premium_settings_wifi_only_desc),
-                    checked = uiState.aiWifiOnly,
-                    onCheckedChange = { viewModel.setAiWifiOnly(it) }
+                    checked = false,
+                    onCheckedChange = { }
                 )
 
                 HorizontalDivider(
@@ -304,10 +268,89 @@ fun SettingsScreen(
                     icon = Icons.Filled.Description,
                     title = stringResource(R.string.premium_settings_new_tags),
                     subtitle = stringResource(R.string.premium_settings_new_tags_desc),
-                    checked = uiState.aiNewTagsEnabled,
-                    onCheckedChange = { viewModel.setAiNewTagsEnabled(it) }
+                    checked = false,
+                    onCheckedChange = { }
                 )
+            }
+        }
 
+        // Hidden: Original AI Assistant section (disabled for now)
+        if (false && uiState.isPremiumActive) {
+            SettingsSection(title = stringResource(R.string.premium_section_title)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            onClick = {
+                                if (!uiState.isPremiumActive) {
+                                    showPremiumUpgradeSheet = true
+                                }
+                            }
+                        )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.AutoAwesome,
+                        contentDescription = stringResource(R.string.premium_section_title),
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.premium_section_title),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            if (uiState.isPremiumActive) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.premium_badge),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
+                        }
+                        val expiryDate = uiState.premiumExpiryDate
+                        Text(
+                            text = if (uiState.isPremiumActive) {
+                                if (!expiryDate.isNullOrBlank())
+                                    stringResource(R.string.premium_status_active, expiryDate)
+                                else
+                                    stringResource(R.string.premium_status_active_no_date)
+                            } else {
+                                stringResource(R.string.premium_status_inactive)
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (!uiState.isPremiumActive) {
+                        Icon(
+                            imageVector = Icons.Filled.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // AI Suggestions Toggle (only show if Premium active)
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     color = MaterialTheme.colorScheme.outlineVariant

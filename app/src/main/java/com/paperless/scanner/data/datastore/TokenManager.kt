@@ -188,12 +188,12 @@ class TokenManager(private val context: Context) {
 
     /** Whether AI suggestions are enabled (user preference) */
     val aiSuggestionsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[AI_SUGGESTIONS_ENABLED_KEY] ?: true // Default: enabled
+        preferences[AI_SUGGESTIONS_ENABLED_KEY] ?: false // Default: disabled
     }
 
     /** Whether AI can suggest new tags that don't exist yet */
     val aiNewTagsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[AI_NEW_TAGS_ENABLED_KEY] ?: true // Default: enabled
+        preferences[AI_NEW_TAGS_ENABLED_KEY] ?: false // Default: disabled
     }
 
     /** Whether AI features should only work on WiFi */
