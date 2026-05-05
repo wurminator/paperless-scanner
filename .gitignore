@@ -64,6 +64,8 @@ signing.properties
 
 # Google Services (API Keys)
 google-services.json
+# Allow dummy for CI builds (no secrets)
+!app/src/debug/google-services.json
 
 # Freeline
 freeline.py
