@@ -1,0 +1,33 @@
+# Server Setup — Fill fields, clear URL, verify still on setup
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - input
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Fill URL field
+- tapOn: "Enter your Paperless-ngx server URL"
+- inputText: "https://myserver.local"
+
+# Fill token field
+- tapOn: "Authentication Token"
+- inputText: "abc123token"
+
+# Clear the URL field
+- tapOn: "https://myserver.local"
+- eraseText: 50
+
+# Verify we're still on the setup screen
+- assertVisible: "Connect to Paperless"

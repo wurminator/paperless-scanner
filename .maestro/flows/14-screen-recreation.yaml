@@ -1,0 +1,43 @@
+# Screen Recreation — App state survives stop/start cycle (simulates rotation)
+appId: com.paperless.scanner.debug
+tags:
+  - lifecycle
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Enter URL
+- tapOn: "Enter your Paperless-ngx server URL"
+- inputText: "https://paperless.example.com"
+- back
+
+# Stop and relaunch — simulates activity recreation (like rotation)
+- stopApp
+- launchApp
+
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless|Decline"
+    timeout: 15000
+
+- tapOn:
+    text: "Decline"
+    optional: true
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 5000
+
+# Verify setup screen is intact
+- assertVisible: "Server URL"
+- assertVisible: "Connect"

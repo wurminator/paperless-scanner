@@ -1,0 +1,40 @@
+# Tab Switching — Token <-> Password multiple times
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - navigation
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Rapidly switch tabs
+- tapOn: "Password"
+- tapOn: "Token"
+- tapOn: "Password"
+- tapOn: "Token"
+- tapOn: "Password"
+
+# Verify Password tab is active
+- extendedWaitUntil:
+    visible:
+      text: "Password"
+    timeout: 3000
+
+# Switch back and verify
+- tapOn: "Token"
+- assertVisible: "Authentication Token"
+
+# One more rapid switch
+- tapOn: "Password"
+- tapOn: "Token"
+- assertVisible: "Authentication Token"

@@ -1,0 +1,40 @@
+# Double-tap Connect — Rapid button presses don't crash
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - edge-case
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Enter some data
+- tapOn: "Enter your Paperless-ngx server URL"
+- inputText: "https://paperless.test"
+- back
+
+- tapOn: "Authentication Token"
+- inputText: "testtoken"
+- back
+
+# Rapidly tap Connect 5 times
+- tapOn: "Connect"
+- tapOn: "Connect"
+- tapOn: "Connect"
+- tapOn: "Connect"
+- tapOn: "Connect"
+
+# App should NOT crash — either still on setup or transitioned
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless|Error|Loading"
+    timeout: 8000

@@ -1,0 +1,48 @@
+# Back Button Navigation — Pressing back on setup screen
+appId: com.paperless.scanner.debug
+tags:
+  - navigation
+  - lifecycle
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Press back — app goes to background
+- back
+
+# Wait a moment
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 2000
+
+# Relaunch
+- launchApp
+
+# Should return to setup screen
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless|Decline"
+    timeout: 10000
+
+- tapOn:
+    text: "Decline"
+    optional: true
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 5000
+
+# Verify form is still functional
+- assertVisible: "Server URL"
+- assertVisible: "Connect"

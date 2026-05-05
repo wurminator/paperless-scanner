@@ -1,0 +1,36 @@
+# Server Setup — Invalid URL doesn't crash
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - error
+  - input
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Enter invalid URL (no protocol)
+- tapOn: "Enter your Paperless-ngx server URL"
+- inputText: "not-a-valid-url"
+
+# Enter a token
+- tapOn: "Authentication Token"
+- inputText: "faketoken123"
+
+# Tap Connect — should show error or stay on screen
+- tapOn: "Connect"
+
+# App should NOT crash — either stays on setup or shows error
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless|Error|Invalid|Connection"
+    timeout: 10000

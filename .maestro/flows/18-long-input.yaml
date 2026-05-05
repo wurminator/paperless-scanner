@@ -1,0 +1,35 @@
+# Long Input — Very long URL and token don't crash
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - input
+  - edge-case
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Enter very long URL
+- tapOn: "Enter your Paperless-ngx server URL"
+- inputText: "https://subdomain.subdomain.subdomain.example-very-long-domain-name.example.com:8443/very/long/path/that/goes/on/and/and/and/on"
+- back
+
+# No crash
+- assertVisible: "Connect to Paperless"
+
+# Enter very long token
+- tapOn: "Authentication Token"
+- inputText: "abcdefghijklmnopqrstuvwxzy0123456789abcdefghijklmnopqrstuvwxzy0123456789abcdefghijklmnopqrstuvwxzy0123456789"
+- back
+
+# No crash
+- assertVisible: "Connect to Paperless"

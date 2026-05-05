@@ -1,0 +1,60 @@
+# Multiple App Kill/Restart — State survives
+appId: com.paperless.scanner.debug
+tags:
+  - lifecycle
+  - persistence
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Enter URL
+- tapOn: "Enter your Paperless-ngx server URL"
+- inputText: "https://persistent.example.com"
+- back
+
+# Kill cycle 1
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless|Decline"
+    timeout: 15000
+
+# Dismiss analytics if shown
+- tapOn:
+    text: "Decline"
+    optional: true
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 5000
+
+# Kill cycle 2
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless|Decline"
+    timeout: 15000
+
+- tapOn:
+    text: "Decline"
+    optional: true
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 5000
+
+# Verify still functional
+- assertVisible: "Server URL"
+- assertVisible: "Connect"

@@ -1,0 +1,35 @@
+# Special Characters — URL and Token fields accept special chars
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - input
+  - edge-case
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Enter URL with special characters
+- tapOn: "Enter your Paperless-ngx server URL"
+- inputText: "https://user:pass@server.local:8443/path?query=1&val=2"
+- back
+
+# No crash
+- assertVisible: "Connect to Paperless"
+
+# Enter token with special characters
+- tapOn: "Authentication Token"
+- inputText: "a1b2c3d4e5f6!@#$%^&*()"
+- back
+
+# No crash
+- assertVisible: "Connect to Paperless"
