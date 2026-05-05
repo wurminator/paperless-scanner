@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -67,6 +68,90 @@ class LegacyScannerWidget : AppWidgetProvider() {
                 .getBoolean(KEY_SERVER_ONLINE, false)
         }
     }
+
+    // ==================== Material You Color Helpers ====================
+
+    /**
+     * Resolved colour palette for legacy RemoteViews widgets.
+     *
+     * On API 31+ the colours come from the platform Material You dynamic palette;
+     * on older versions the classic dark-tech lime-green fallback is used.
+     */
+    private data class LegacyWidgetColors(
+        val background: Int,
+        val surface: Int,
+        val textPrimary: Int,
+        val textSecondary: Int,
+        val border: Int,
+        val iconTint: Int,
+        val badgeBackground: Int,
+    )
+
+    /**
+     * Resolve the best available colour palette for legacy RemoteViews.
+     */
+    private fun resolveColors(context: Context): LegacyWidgetColors {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            @Suppress("NewApi") // Guarded by SDK check
+            LegacyWidgetColors(
+                background      = context.getColor(android.R.color.system_neutral1_800),
+                surface         = context.getColor(android.R.color.system_neutral1_700),
+                textPrimary     = context.getColor(android.R.color.system_accent1_200),
+                textSecondary   = context.getColor(android.R.color.system_neutral2_300),
+                border          = context.getColor(android.R.color.system_neutral1_600),
+                iconTint        = context.getColor(android.R.color.system_accent1_200),
+                badgeBackground = context.getColor(android.R.color.system_neutral1_700),
+            )
+        } else {
+            LegacyWidgetColors(
+                background      = context.getColor(R.color.widget_background),
+                surface         = context.getColor(R.color.widget_surface),
+                textPrimary     = context.getColor(R.color.widget_text_primary),
+                textSecondary   = context.getColor(R.color.widget_text_secondary),
+                border          = context.getColor(R.color.widget_border),
+                iconTint        = context.getColor(R.color.widget_icon_tint),
+                badgeBackground = context.getColor(R.color.widget_badge_background),
+            )
+        }
+    }
+
+    /**
+     * Apply Material You / fallback colours to a RemoteViews instance.
+     * Sets background, text, and tint colours on the standard widget layout IDs.
+     */
+    private fun applyColors(views: RemoteViews, colors: LegacyWidgetColors) {
+        // Common background containers — use setInt to set background color programmatically
+        // Note: these IDs exist across the different layout files; calls to missing IDs are no-ops
+        val containerIds = intArrayOf(
+            R.id.widget_container,
+            R.id.widget_status_container,
+            R.id.widget_combined_status,
+        )
+        for (id in containerIds) {
+            views.setInt(id, "setBackgroundColor", colors.background)
+        }
+
+        // Surface backgrounds
+        val surfaceIds = intArrayOf(
+            R.id.widget_pending_container,
+        )
+        for (id in surfaceIds) {
+            views.setInt(id, "setBackgroundColor", colors.surface)
+        }
+
+        // Text colours
+        val textPrimaryIds = intArrayOf(
+            R.id.widget_pending_count,
+            R.id.widget_status_pending,
+            R.id.widget_status_server,
+            R.id.widget_combined_pending,
+        )
+        for (id in textPrimaryIds) {
+            views.setTextColor(id, colors.textSecondary)
+        }
+    }
+
+    // ==================== Widget Lifecycle ====================
 
     override fun onUpdate(
         context: Context,
@@ -142,6 +227,7 @@ class LegacyScannerWidget : AppWidgetProvider() {
         appWidgetId: Int
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_scanner)
+        val colors = resolveColors(context)
 
         val launchIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -168,6 +254,9 @@ class LegacyScannerWidget : AppWidgetProvider() {
             views.setViewVisibility(R.id.widget_pending_container, View.GONE)
         }
 
+        // Apply dynamic colours
+        applyColors(views, colors)
+
         appWidgetManager.updateAppWidget(appWidgetId, views)
 
         FirebaseCrashlytics.getInstance()
@@ -184,6 +273,7 @@ class LegacyScannerWidget : AppWidgetProvider() {
         appWidgetId: Int
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_status)
+        val colors = resolveColors(context)
 
         // Tap opens SyncCenter via deep link
         views.setOnClickPendingIntent(
@@ -217,6 +307,9 @@ class LegacyScannerWidget : AppWidgetProvider() {
             )
         )
 
+        // Apply dynamic colours
+        applyColors(views, colors)
+
         appWidgetManager.updateAppWidget(appWidgetId, views)
 
         FirebaseCrashlytics.getInstance()
@@ -233,6 +326,7 @@ class LegacyScannerWidget : AppWidgetProvider() {
         appWidgetId: Int
     ) {
         val views = RemoteViews(context.packageName, R.layout.widget_combined)
+        val colors = resolveColors(context)
 
         // Camera button → paperless://scan/camera
         views.setOnClickPendingIntent(
@@ -270,6 +364,9 @@ class LegacyScannerWidget : AppWidgetProvider() {
             if (isOnline) R.drawable.ic_widget_status_online
             else R.drawable.ic_widget_status_offline
         )
+
+        // Apply dynamic colours
+        applyColors(views, colors)
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
 
@@ -309,6 +406,7 @@ class LegacyScannerWidget : AppWidgetProvider() {
         Log.d(TAG, "Quick scan layout for widget $appWidgetId: horizontal=$horizontal")
 
         val views = RemoteViews(context.packageName, layout)
+        val colors = resolveColors(context)
 
         // Camera button → paperless://scan/camera
         views.setOnClickPendingIntent(
@@ -327,6 +425,9 @@ class LegacyScannerWidget : AppWidgetProvider() {
             R.id.widget_btn_file,
             createDeepLinkPendingIntent(context, "paperless://scan/file", appWidgetId * 10 + 3)
         )
+
+        // Apply dynamic colours
+        applyColors(views, colors)
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
 

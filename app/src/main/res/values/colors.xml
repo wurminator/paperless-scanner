@@ -10,7 +10,7 @@
     <color name="splash_background">#0A0A0A</color>
     <color name="ic_launcher_background">#0A0A0A</color>
 
-    <!-- Widget Colors (Dark Tech Precision Pro) -->
+    <!-- Widget Colors (Dark Tech Precision Pro) — fallback for API < 31 -->
     <color name="widget_background">#141414</color>
     <color name="widget_surface">#1F1F1F</color>
     <color name="widget_text_primary">#E1FF8D</color>
@@ -19,4 +19,16 @@
     <color name="widget_border">#27272A</color>
     <color name="widget_icon_tint">#E1FF8D</color>
     <color name="widget_text_on_accent">#0A0A0A</color>
+
+    <!-- Material You dynamic color approximations (night mode, used as fallback when
+         system dynamic colors are unavailable but we still want a "softer" palette).
+         On API 31+ the widget resolves colors programmatically from
+         android.R.color.system_* resources. -->
+    <color name="widget_m3_background">#1C1B1F</color>
+    <color name="widget_m3_surface">#2B2930</color>
+    <color name="widget_m3_text_primary">#D0BCFF</color>
+    <color name="widget_m3_text_secondary">#CAC4D0</color>
+    <color name="widget_m3_badge_background">#2B2930</color>
+    <color name="widget_m3_border">#49454F</color>
+    <color name="widget_m3_icon_tint">#D0BCFF</color>
 </resources>

@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.DpSize
@@ -49,6 +50,63 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.paperless.scanner.MainActivity
 import com.paperless.scanner.R
+
+// ==================== Material You Color Support ====================
+
+/**
+ * Holds resolved [ColorProvider] values for every color slot used by the widget.
+ *
+ * On Android 12+ (API 31) the colours are pulled from the platform
+ * `android.R.color.system_*` dynamic-color palette so the widget matches the
+ * user's wallpaper / Material You theme automatically.
+ *
+ * On older versions the classic dark-tech lime-green palette is used as-is
+ * (via XML colour resources).
+ */
+data class WidgetColors(
+    val background: ColorProvider,
+    val surface: ColorProvider,
+    val textPrimary: ColorProvider,
+    val textSecondary: ColorProvider,
+    val border: ColorProvider,
+    val iconTint: ColorProvider,
+    val badgeBackground: ColorProvider,
+)
+
+/**
+ * Resolve the best available colour palette for the given [context].
+ *
+ * * API 31+ → Material You system dynamic colours
+ * * API <31 → hardcoded dark-tech fallback (lime green accent)
+ */
+@Composable
+private fun rememberWidgetColors(): WidgetColors {
+    val context = LocalContext.current
+
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        WidgetColors(
+            background   = ColorProvider(context.getColor(android.R.color.system_neutral1_800)),
+            surface      = ColorProvider(context.getColor(android.R.color.system_neutral1_700)),
+            textPrimary  = ColorProvider(context.getColor(android.R.color.system_accent1_200)),
+            textSecondary = ColorProvider(context.getColor(android.R.color.system_neutral2_300)),
+            border       = ColorProvider(context.getColor(android.R.color.system_neutral1_600)),
+            iconTint     = ColorProvider(context.getColor(android.R.color.system_accent1_200)),
+            badgeBackground = ColorProvider(context.getColor(android.R.color.system_neutral1_700)),
+        )
+    } else {
+        WidgetColors(
+            background      = ColorProvider(R.color.widget_background),
+            surface         = ColorProvider(R.color.widget_surface),
+            textPrimary     = ColorProvider(R.color.widget_text_primary),
+            textSecondary   = ColorProvider(R.color.widget_text_secondary),
+            border          = ColorProvider(R.color.widget_border),
+            iconTint        = ColorProvider(R.color.widget_icon_tint),
+            badgeBackground = ColorProvider(R.color.widget_badge_background),
+        )
+    }
+}
+
+// ==================== Glance Widget ====================
 
 class ScannerWidget : GlanceAppWidget() {
 
@@ -125,12 +183,13 @@ class ScannerWidget : GlanceAppWidget() {
     @Composable
     private fun QuickScanHorizontalContent() {
         val context = LocalContext.current
+        val colors = rememberWidgetColors()
 
         Row(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(16.dp)
-                .background(ColorProvider(R.color.widget_background)),
+                .background(colors.background),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // defaultWeight() is a RowScope function → equal 1/3 width per child
@@ -138,21 +197,24 @@ class ScannerWidget : GlanceAppWidget() {
                 icon = R.drawable.ic_widget_camera,
                 label = context.getString(R.string.widget_action_camera),
                 deepLinkUri = "paperless://scan/camera",
-                modifier = GlanceModifier.defaultWeight()
+                modifier = GlanceModifier.defaultWeight(),
+                colors = colors
             )
             Spacer(modifier = GlanceModifier.width(2.dp))
             CompactActionButton(
                 icon = R.drawable.ic_widget_gallery,
                 label = context.getString(R.string.widget_action_gallery),
                 deepLinkUri = "paperless://scan/gallery",
-                modifier = GlanceModifier.defaultWeight()
+                modifier = GlanceModifier.defaultWeight(),
+                colors = colors
             )
             Spacer(modifier = GlanceModifier.width(2.dp))
             CompactActionButton(
                 icon = R.drawable.ic_widget_file,
                 label = context.getString(R.string.widget_action_file),
                 deepLinkUri = "paperless://scan/file",
-                modifier = GlanceModifier.defaultWeight()
+                modifier = GlanceModifier.defaultWeight(),
+                colors = colors
             )
         }
     }
@@ -170,6 +232,7 @@ class ScannerWidget : GlanceAppWidget() {
     @Composable
     private fun QuickScanSquareContent() {
         val context = LocalContext.current
+        val colors = rememberWidgetColors()
         val size = LocalSize.current
         // Each row: (total height - outer padding 4*2 - spacer 4) / 2 rows
         val cellHeight = (size.height - 12.dp) / 2
@@ -178,7 +241,7 @@ class ScannerWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(20.dp)
-                .background(ColorProvider(R.color.widget_background))
+                .background(colors.background)
                 .padding(4.dp)
         ) {
             // Top row: Camera + Gallery
@@ -192,14 +255,16 @@ class ScannerWidget : GlanceAppWidget() {
                     icon = R.drawable.ic_widget_camera,
                     label = context.getString(R.string.widget_action_camera),
                     deepLinkUri = "paperless://scan/camera",
-                    modifier = GlanceModifier.defaultWeight().height(cellHeight)
+                    modifier = GlanceModifier.defaultWeight().height(cellHeight),
+                    colors = colors
                 )
                 Spacer(modifier = GlanceModifier.width(4.dp))
                 QuickActionButton(
                     icon = R.drawable.ic_widget_gallery,
                     label = context.getString(R.string.widget_action_gallery),
                     deepLinkUri = "paperless://scan/gallery",
-                    modifier = GlanceModifier.defaultWeight().height(cellHeight)
+                    modifier = GlanceModifier.defaultWeight().height(cellHeight),
+                    colors = colors
                 )
             }
 
@@ -217,7 +282,8 @@ class ScannerWidget : GlanceAppWidget() {
                     icon = R.drawable.ic_widget_file,
                     label = context.getString(R.string.widget_action_file),
                     deepLinkUri = "paperless://scan/file",
-                    modifier = GlanceModifier.defaultWeight().height(cellHeight)
+                    modifier = GlanceModifier.defaultWeight().height(cellHeight),
+                    colors = colors
                 )
             }
         }
@@ -234,6 +300,7 @@ class ScannerWidget : GlanceAppWidget() {
     @Composable
     private fun QuickScanWideContent() {
         val context = LocalContext.current
+        val colors = rememberWidgetColors()
         val size = LocalSize.current
         // Full available height: total - outer padding (4*2)
         val cellHeight = size.height - 8.dp
@@ -242,7 +309,7 @@ class ScannerWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(20.dp)
-                .background(ColorProvider(R.color.widget_background))
+                .background(colors.background)
                 .padding(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -250,21 +317,24 @@ class ScannerWidget : GlanceAppWidget() {
                 icon = R.drawable.ic_widget_camera,
                 label = context.getString(R.string.widget_action_camera),
                 deepLinkUri = "paperless://scan/camera",
-                modifier = GlanceModifier.defaultWeight().height(cellHeight)
+                modifier = GlanceModifier.defaultWeight().height(cellHeight),
+                colors = colors
             )
             Spacer(modifier = GlanceModifier.width(4.dp))
             QuickActionButton(
                 icon = R.drawable.ic_widget_gallery,
                 label = context.getString(R.string.widget_action_gallery),
                 deepLinkUri = "paperless://scan/gallery",
-                modifier = GlanceModifier.defaultWeight().height(cellHeight)
+                modifier = GlanceModifier.defaultWeight().height(cellHeight),
+                colors = colors
             )
             Spacer(modifier = GlanceModifier.width(4.dp))
             QuickActionButton(
                 icon = R.drawable.ic_widget_file,
                 label = context.getString(R.string.widget_action_file),
                 deepLinkUri = "paperless://scan/file",
-                modifier = GlanceModifier.defaultWeight().height(cellHeight)
+                modifier = GlanceModifier.defaultWeight().height(cellHeight),
+                colors = colors
             )
         }
     }
@@ -278,6 +348,7 @@ class ScannerWidget : GlanceAppWidget() {
     @Composable
     private fun StatusContent() {
         val context = LocalContext.current
+        val colors = rememberWidgetColors()
         val pendingCount = currentState(key = PENDING_COUNT_KEY) ?: 0
         val isOnline = currentState(key = SERVER_ONLINE_KEY) ?: false
 
@@ -285,7 +356,7 @@ class ScannerWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(20.dp)
-                .background(ColorProvider(R.color.widget_background))
+                .background(colors.background)
                 .clickable(
                     actionStartActivity(
                         createDeepLinkIntent(context, "paperless://status")
@@ -304,7 +375,7 @@ class ScannerWidget : GlanceAppWidget() {
                 Text(
                     text = "PAPERLESS",
                     style = TextStyle(
-                        color = ColorProvider(R.color.widget_text_primary),
+                        color = colors.textPrimary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -317,7 +388,7 @@ class ScannerWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .cornerRadius(8.dp)
-                        .background(ColorProvider(R.color.widget_surface))
+                        .background(colors.surface)
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically
@@ -326,7 +397,7 @@ class ScannerWidget : GlanceAppWidget() {
                         provider = ImageProvider(R.drawable.ic_cloud_upload),
                         contentDescription = null,
                         modifier = GlanceModifier.size(18.dp),
-                        colorFilter = ColorFilter.tint(ColorProvider(R.color.widget_text_primary))
+                        colorFilter = ColorFilter.tint(colors.iconTint)
                     )
                     Spacer(modifier = GlanceModifier.width(8.dp))
                     Text(
@@ -336,7 +407,7 @@ class ScannerWidget : GlanceAppWidget() {
                             context.getString(R.string.widget_no_pending)
                         },
                         style = TextStyle(
-                            color = ColorProvider(R.color.widget_text_secondary),
+                            color = colors.textSecondary,
                             fontSize = 12.sp
                         )
                     )
@@ -349,7 +420,7 @@ class ScannerWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .cornerRadius(8.dp)
-                        .background(ColorProvider(R.color.widget_surface))
+                        .background(colors.surface)
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalAlignment = Alignment.CenterVertically
@@ -369,7 +440,7 @@ class ScannerWidget : GlanceAppWidget() {
                             else R.string.widget_status_offline
                         ),
                         style = TextStyle(
-                            color = ColorProvider(R.color.widget_text_secondary),
+                            color = colors.textSecondary,
                             fontSize = 12.sp
                         )
                     )
@@ -385,6 +456,7 @@ class ScannerWidget : GlanceAppWidget() {
     @Composable
     private fun StatusHorizontalContent() {
         val context = LocalContext.current
+        val colors = rememberWidgetColors()
         val pendingCount = currentState(key = PENDING_COUNT_KEY) ?: 0
         val isOnline = currentState(key = SERVER_ONLINE_KEY) ?: false
 
@@ -392,7 +464,7 @@ class ScannerWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(16.dp)
-                .background(ColorProvider(R.color.widget_background))
+                .background(colors.background)
                 .clickable(
                     actionStartActivity(
                         createDeepLinkIntent(context, "paperless://status")
@@ -411,13 +483,13 @@ class ScannerWidget : GlanceAppWidget() {
                     provider = ImageProvider(R.drawable.ic_cloud_upload),
                     contentDescription = null,
                     modifier = GlanceModifier.size(18.dp),
-                    colorFilter = ColorFilter.tint(ColorProvider(R.color.widget_text_primary))
+                    colorFilter = ColorFilter.tint(colors.iconTint)
                 )
                 Spacer(modifier = GlanceModifier.width(4.dp))
                 Text(
                     text = if (pendingCount > 0) "$pendingCount" else "0",
                     style = TextStyle(
-                        color = ColorProvider(R.color.widget_text_secondary),
+                        color = colors.textSecondary,
                         fontSize = 12.sp
                     )
                 )
@@ -428,7 +500,7 @@ class ScannerWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .width(1.dp)
                         .height(20.dp)
-                        .background(ColorProvider(R.color.widget_border))
+                        .background(colors.border)
                 ) {}
 
                 Spacer(modifier = GlanceModifier.width(12.dp))
@@ -448,7 +520,7 @@ class ScannerWidget : GlanceAppWidget() {
                         else R.string.widget_status_offline
                     ),
                     style = TextStyle(
-                        color = ColorProvider(R.color.widget_text_secondary),
+                        color = colors.textSecondary,
                         fontSize = 11.sp
                     )
                 )
@@ -465,6 +537,7 @@ class ScannerWidget : GlanceAppWidget() {
     @Composable
     private fun CombinedContent() {
         val context = LocalContext.current
+        val colors = rememberWidgetColors()
         val pendingCount = currentState(key = PENDING_COUNT_KEY) ?: 0
         val isOnline = currentState(key = SERVER_ONLINE_KEY) ?: false
 
@@ -472,7 +545,7 @@ class ScannerWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(20.dp)
-                .background(ColorProvider(R.color.widget_background)),
+                .background(colors.background),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -492,13 +565,15 @@ class ScannerWidget : GlanceAppWidget() {
                     QuickActionButton(
                         icon = R.drawable.ic_widget_camera,
                         label = context.getString(R.string.widget_action_camera),
-                        deepLinkUri = "paperless://scan/camera"
+                        deepLinkUri = "paperless://scan/camera",
+                        colors = colors
                     )
                     Spacer(modifier = GlanceModifier.width(6.dp))
                     QuickActionButton(
                         icon = R.drawable.ic_widget_gallery,
                         label = context.getString(R.string.widget_action_gallery),
-                        deepLinkUri = "paperless://scan/gallery"
+                        deepLinkUri = "paperless://scan/gallery",
+                        colors = colors
                     )
                 }
 
@@ -509,7 +584,7 @@ class ScannerWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .height(1.dp)
-                        .background(ColorProvider(R.color.widget_border))
+                        .background(colors.border)
                 ) {}
 
                 Spacer(modifier = GlanceModifier.height(4.dp))
@@ -519,7 +594,7 @@ class ScannerWidget : GlanceAppWidget() {
                     modifier = GlanceModifier
                         .fillMaxWidth()
                         .cornerRadius(8.dp)
-                        .background(ColorProvider(R.color.widget_surface))
+                        .background(colors.surface)
                         .padding(vertical = 4.dp, horizontal = 8.dp)
                         .clickable(
                             actionStartActivity(
@@ -533,7 +608,7 @@ class ScannerWidget : GlanceAppWidget() {
                         provider = ImageProvider(R.drawable.ic_cloud_upload),
                         contentDescription = null,
                         modifier = GlanceModifier.size(14.dp),
-                        colorFilter = ColorFilter.tint(ColorProvider(R.color.widget_text_primary))
+                        colorFilter = ColorFilter.tint(colors.iconTint)
                     )
                     Spacer(modifier = GlanceModifier.width(4.dp))
                     Text(
@@ -543,7 +618,7 @@ class ScannerWidget : GlanceAppWidget() {
                             context.getString(R.string.widget_no_pending)
                         },
                         style = TextStyle(
-                            color = ColorProvider(R.color.widget_text_secondary),
+                            color = colors.textSecondary,
                             fontSize = 10.sp
                         )
                     )
@@ -568,6 +643,7 @@ class ScannerWidget : GlanceAppWidget() {
     @Composable
     private fun CombinedHorizontalContent() {
         val context = LocalContext.current
+        val colors = rememberWidgetColors()
         val pendingCount = currentState(key = PENDING_COUNT_KEY) ?: 0
         val isOnline = currentState(key = SERVER_ONLINE_KEY) ?: false
 
@@ -575,21 +651,23 @@ class ScannerWidget : GlanceAppWidget() {
             modifier = GlanceModifier
                 .fillMaxSize()
                 .cornerRadius(16.dp)
-                .background(ColorProvider(R.color.widget_background)),
+                .background(colors.background),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CompactActionButton(
                 icon = R.drawable.ic_widget_camera,
                 label = context.getString(R.string.widget_action_camera),
                 deepLinkUri = "paperless://scan/camera",
-                modifier = GlanceModifier.defaultWeight()
+                modifier = GlanceModifier.defaultWeight(),
+                colors = colors
             )
             Spacer(modifier = GlanceModifier.width(2.dp))
             CompactActionButton(
                 icon = R.drawable.ic_widget_gallery,
                 label = context.getString(R.string.widget_action_gallery),
                 deepLinkUri = "paperless://scan/gallery",
-                modifier = GlanceModifier.defaultWeight()
+                modifier = GlanceModifier.defaultWeight(),
+                colors = colors
             )
 
             Spacer(modifier = GlanceModifier.width(2.dp))
@@ -598,7 +676,7 @@ class ScannerWidget : GlanceAppWidget() {
                 modifier = GlanceModifier
                     .width(1.dp)
                     .height(24.dp)
-                    .background(ColorProvider(R.color.widget_border))
+                    .background(colors.border)
             ) {}
 
             Spacer(modifier = GlanceModifier.width(2.dp))
@@ -608,7 +686,7 @@ class ScannerWidget : GlanceAppWidget() {
                 modifier = GlanceModifier
                     .defaultWeight()
                     .cornerRadius(10.dp)
-                    .background(ColorProvider(R.color.widget_surface))
+                    .background(colors.surface)
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .clickable(
                         actionStartActivity(
@@ -621,13 +699,13 @@ class ScannerWidget : GlanceAppWidget() {
                     provider = ImageProvider(R.drawable.ic_cloud_upload),
                     contentDescription = null,
                     modifier = GlanceModifier.size(14.dp),
-                    colorFilter = ColorFilter.tint(ColorProvider(R.color.widget_text_primary))
+                    colorFilter = ColorFilter.tint(colors.iconTint)
                 )
                 Spacer(modifier = GlanceModifier.width(3.dp))
                 Text(
                     text = "$pendingCount",
                     style = TextStyle(
-                        color = ColorProvider(R.color.widget_text_secondary),
+                        color = colors.textSecondary,
                         fontSize = 10.sp
                     )
                 )
@@ -656,13 +734,14 @@ class ScannerWidget : GlanceAppWidget() {
         icon: Int,
         label: String,
         deepLinkUri: String,
-        modifier: GlanceModifier = GlanceModifier
+        modifier: GlanceModifier = GlanceModifier,
+        colors: WidgetColors = rememberWidgetColors()
     ) {
         val context = LocalContext.current
         Column(
             modifier = modifier
                 .cornerRadius(12.dp)
-                .background(ColorProvider(R.color.widget_surface))
+                .background(colors.surface)
                 .padding(4.dp)
                 .clickable(
                     actionStartActivity(
@@ -681,7 +760,7 @@ class ScannerWidget : GlanceAppWidget() {
             Text(
                 text = label,
                 style = TextStyle(
-                    color = ColorProvider(R.color.widget_text_secondary),
+                    color = colors.textSecondary,
                     fontSize = 10.sp
                 )
             )
@@ -699,7 +778,8 @@ class ScannerWidget : GlanceAppWidget() {
         icon: Int,
         label: String,
         deepLinkUri: String,
-        modifier: GlanceModifier = GlanceModifier
+        modifier: GlanceModifier = GlanceModifier,
+        colors: WidgetColors = rememberWidgetColors()
     ) {
         val context = LocalContext.current
         // Fill entire cell height (no padding subtraction - outer cornerRadius clips edges)
@@ -709,7 +789,7 @@ class ScannerWidget : GlanceAppWidget() {
             modifier = modifier
                 .height(cellHeight)
                 .cornerRadius(10.dp)
-                .background(ColorProvider(R.color.widget_surface))
+                .background(colors.surface)
                 .clickable(
                     actionStartActivity(
                         createDeepLinkIntent(context, deepLinkUri)
