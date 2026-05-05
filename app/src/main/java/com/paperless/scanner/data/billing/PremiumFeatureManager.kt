@@ -92,7 +92,7 @@ class PremiumFeatureManager @Inject constructor(
             return when (feature) {
                 PremiumFeature.AI_ANALYSIS -> isAiSuggestionsEnabledSync()
                 PremiumFeature.AI_NEW_TAGS -> isAiSuggestionsEnabledSync() && isAiNewTagsEnabledSync()
-                PremiumFeature.AI_SUMMARY -> isAiSuggestionsEnabledSync()
+                PremiumFeature.AI_SUMMARY -> false // Not implemented yet — always disabled
             }
         }
         return when (feature) {

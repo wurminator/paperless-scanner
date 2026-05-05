@@ -77,9 +77,10 @@ class PremiumFeatureManagerTest {
     }
 
     @Test
-    fun `isAiEnabled is false when premium access disabled`() = runTest {
+    fun `isAiEnabled is false when user disabled AI even with billing off`() = runTest {
+        // BILLING_ENABLED=false: only user preference matters, not subscription
         setPremiumAccessEnabled(false)
-        mockAiSuggestionsEnabled.value = true
+        mockAiSuggestionsEnabled.value = false
 
         premiumFeatureManager.isAiEnabled.test {
             assertFalse(awaitItem())
@@ -141,8 +142,10 @@ class PremiumFeatureManagerTest {
     }
 
     @Test
-    fun `isFeatureAvailable AI_ANALYSIS returns false when premium access disabled`() {
-        setPremiumAccessEnabled(false)
+    fun `isFeatureAvailable AI_ANALYSIS returns false when user preference disabled`() {
+        // BILLING_ENABLED=false: premium access is always granted,
+        // so only user preference controls availability.
+        mockAiSuggestionsEnabled.value = false
 
         assertFalse(premiumFeatureManager.isFeatureAvailable(PremiumFeature.AI_ANALYSIS))
     }
@@ -186,13 +189,14 @@ class PremiumFeatureManagerTest {
     }
 
     @Test
-    fun `requireFeature returns RequiresUpgrade when no premium access`() = runTest {
-        setPremiumAccessEnabled(false)
-        mockAiSuggestionsEnabled.value = true
+    fun `requireFeature returns DisabledInSettings when feature disabled by user`() = runTest {
+        // BILLING_ENABLED=false: premium access is always true,
+        // so disabling user preference yields DisabledInSettings, not RequiresUpgrade.
+        mockAiSuggestionsEnabled.value = false
 
         val result = premiumFeatureManager.requireFeature(PremiumFeature.AI_ANALYSIS)
 
-        assertEquals(FeatureAccessResult.RequiresUpgrade, result)
+        assertEquals(FeatureAccessResult.DisabledInSettings, result)
     }
 
     @Test
@@ -208,27 +212,19 @@ class PremiumFeatureManagerTest {
     // ==================== Reactive Updates Tests ====================
 
     @Test
-    fun `isAiEnabled reacts to premium access changes`() = runTest {
+    fun `isAiEnabled ignores subscription when billing disabled`() = runTest {
+        // BILLING_ENABLED=false: isAiEnabled follows user preference only.
         mockAiSuggestionsEnabled.value = true
-        // Start from a known state (no subscription)
+
+        // Verify: true regardless of subscription state
         setPremiumAccessEnabled(false)
+        assertTrue(premiumFeatureManager.isFeatureAvailableAsync(PremiumFeature.AI_ANALYSIS))
 
-        premiumFeatureManager.isAiEnabled.test {
-            // Initially false (no subscription)
-            assertFalse(awaitItem())
+        setPremiumAccessEnabled(true)
+        assertTrue(premiumFeatureManager.isFeatureAvailableAsync(PremiumFeature.AI_ANALYSIS))
 
-            // Set to true (subscription activated)
-            setPremiumAccessEnabled(true)
-            assertTrue(awaitItem())
-
-            // Set back to false (subscription expired)
-            setPremiumAccessEnabled(false)
-            assertFalse(awaitItem())
-
-            // Set to true again (subscription renewed)
-            setPremiumAccessEnabled(true)
-            assertTrue(awaitItem())
-        }
+        setPremiumAccessEnabled(false)
+        assertTrue(premiumFeatureManager.isFeatureAvailableAsync(PremiumFeature.AI_ANALYSIS))
     }
 
     @Test
@@ -261,14 +257,17 @@ class PremiumFeatureManagerTest {
     }
 
     @Test
-    fun `no subscription blocks AI features`() = runTest {
-        setPremiumAccessEnabled(false) // Simulates no subscription
+    fun `no subscription still allows features when billing disabled`() = runTest {
+        // BILLING_ENABLED=false: premium access is always granted regardless of subscription.
+        // Only user preferences control feature availability.
+        setPremiumAccessEnabled(false) // Would block if billing were enabled
         mockAiSuggestionsEnabled.value = true
 
-        assertFalse(premiumFeatureManager.isFeatureAvailable(PremiumFeature.AI_ANALYSIS))
-        assertFalse(premiumFeatureManager.isFeatureAvailableAsync(PremiumFeature.AI_ANALYSIS))
+        // Features are available because billing is disabled (user prefs respected)
+        assertTrue(premiumFeatureManager.isFeatureAvailable(PremiumFeature.AI_ANALYSIS))
+        assertTrue(premiumFeatureManager.isFeatureAvailableAsync(PremiumFeature.AI_ANALYSIS))
 
         val result = premiumFeatureManager.requireFeature(PremiumFeature.AI_ANALYSIS)
-        assertEquals(FeatureAccessResult.RequiresUpgrade, result)
+        assertEquals(FeatureAccessResult.Granted, result)
     }
 }
