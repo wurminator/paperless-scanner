@@ -1,0 +1,10 @@
+# Helper: Dismiss analytics consent dialog
+appId: com.paperless.scanner.debug
+---
+# Wait for analytics dialog
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 10000
+
+# Decline analytics
+- tapOn: "Decline"

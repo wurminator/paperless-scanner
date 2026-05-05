@@ -1,0 +1,21 @@
+# Analytics consent — Decline path
+appId: com.paperless.scanner.debug
+tags:
+  - analytics
+  - onboarding
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+- assertVisible: "Connect to Paperless"

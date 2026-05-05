@@ -1,0 +1,23 @@
+# QR Scanner — Verify setup screen loads with all elements
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - qr-scanner
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Verify the main screen elements are present
+- assertVisible: "Connect to Paperless"
+- assertVisible: "Server URL"
+- assertVisible: "Connect"

@@ -1,0 +1,35 @@
+# Analytics consent — Accept path
+appId: com.paperless.scanner.debug
+tags:
+  - analytics
+  - onboarding
+---
+- clearState
+
+- launchApp
+
+# Wait for analytics consent dialog
+- extendedWaitUntil:
+    visible: "Help us improve the app"
+    timeout: 15000
+
+- assertVisible: "ANALYTICS"
+- assertVisible: "Anonymized usage statistics"
+- assertVisible: "Crash reports for bug fixes"
+- assertVisible: "Performance metrics"
+- assertVisible: "Decline"
+
+# Find and tap Accept/Allow button (right side)
+- tapOn:
+    text: "Accept"
+    optional: true
+
+# If no "Accept" button, try "Allow"
+- tapOn:
+    text: "Allow"
+    optional: true
+
+# Verify server setup screen appears after accepting
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000

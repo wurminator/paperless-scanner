@@ -1,0 +1,35 @@
+# App Lifecycle — Background/foreground doesn't crash
+appId: com.paperless.scanner.debug
+tags:
+  - lifecycle
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Send app to background
+- back
+
+# Wait
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 3000
+
+# Relaunch
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+- assertVisible: "Connect to Paperless"

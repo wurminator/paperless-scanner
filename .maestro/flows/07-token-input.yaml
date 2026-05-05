@@ -1,0 +1,30 @@
+# Token Input — Enter authentication token without crash
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - input
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Tap on Token input field
+- tapOn: "Authentication Token"
+
+# Type a test token
+- inputText: "abc123def456ghi789"
+
+# Dismiss keyboard
+- back
+
+# Verify app didn't crash
+- assertVisible: "Connect to Paperless"

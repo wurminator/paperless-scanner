@@ -1,13 +1,24 @@
-# Smoke Test — App launches without crashing
+# Smoke Test — App starts without crash
 appId: com.paperless.scanner.debug
 tags:
   - smoke
 ---
-# Launch the app
 - launchApp
 
-# Wait a moment for UI to render
+# Wait for analytics consent dialog or main screen
 - extendedWaitUntil:
     visible:
-      text: ".*"
-    timeout: 5000
+      text: "Decline|Connect to Paperless"
+    timeout: 15000
+
+# If analytics dialog shown, dismiss it
+- tapOn:
+    text: "Decline"
+    optional: true
+
+# Verify server setup screen appears
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+- assertVisible: "Connect to Paperless"

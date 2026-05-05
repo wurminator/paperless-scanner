@@ -1,0 +1,27 @@
+# Server Setup — Connect with empty fields
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - error
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect"
+    timeout: 10000
+
+# Tap Connect without entering any data
+- tapOn: "Connect"
+
+# App should still be on server setup screen (error or validation)
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless"
+    timeout: 5000

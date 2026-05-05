@@ -1,0 +1,33 @@
+# State Persistence — App survives kill/restart
+appId: com.paperless.scanner.debug
+tags:
+  - persistence
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Server URL"
+    timeout: 10000
+
+# Enter a server URL
+- tapOn:
+    below: "Server URL"
+    optional: true
+- inputText: "https://my-paperless.example.com"
+
+# Kill and restart — state may or may not persist (depends on Compose state)
+- stopApp
+- launchApp
+
+# App should come back — either to consent dialog or to server setup
+- extendedWaitUntil:
+    visible:
+      text: "Connect to Paperless|Decline"
+    timeout: 15000

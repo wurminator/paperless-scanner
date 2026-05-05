@@ -1,0 +1,50 @@
+# Server Setup — Form validation and elements
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - onboarding
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Verify form elements
+- assertVisible: "Server URL"
+- assertVisible: "Authentication Token"
+- assertVisible: "Connect"
+
+# Verify tabs exist
+- assertVisible: "Token"
+- assertVisible: "Password"
+
+# Scroll down to check more content visible
+- swipe:
+    direction: UP
+
+# Just verify the scroll worked (Connect button still visible means form intact)
+- extendedWaitUntil:
+    visible: "Connect"
+    timeout: 3000
+
+# Try switching to Password tab
+- tapOn: "Password"
+
+# Verify password field appears
+- extendedWaitUntil:
+    visible:
+      text: "Password"
+    timeout: 3000
+
+# Switch back to Token tab
+- tapOn: "Token"
+
+- assertVisible: "Authentication Token"

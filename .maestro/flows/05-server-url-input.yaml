@@ -1,0 +1,30 @@
+# Server URL Input — Enter server URL without crash
+appId: com.paperless.scanner.debug
+tags:
+  - server-setup
+  - input
+---
+- clearState
+
+- launchApp
+
+- extendedWaitUntil:
+    visible: "Decline"
+    timeout: 15000
+- tapOn: "Decline"
+
+- extendedWaitUntil:
+    visible: "Connect to Paperless"
+    timeout: 10000
+
+# Tap on Server URL input field by label
+- tapOn: "Enter your Paperless-ngx server URL"
+
+# Type a URL
+- inputText: "https://docs.example.com"
+
+# Dismiss keyboard
+- back
+
+# Verify app didn't crash — screen still shows header
+- assertVisible: "Connect to Paperless"

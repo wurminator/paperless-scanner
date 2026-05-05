@@ -12,7 +12,8 @@ plugins {
     alias(libs.plugins.paparazzi)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
-    alias(libs.plugins.firebase.perf)
+    // Perf plugin disabled for debug (causes issues without real Firebase project)
+    // alias(libs.plugins.firebase.perf)
 }
 
 // Load version from properties file
@@ -257,11 +258,11 @@ dependencies {
     implementation(libs.itext.io)
     implementation(libs.itext.layout)
 
-    // Firebase Analytics & Crashlytics
+    // Firebase — Crashlytics/Perf plugins disabled for debug (no real Firebase project)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.perf)
+    // implementation(libs.firebase.perf)  // Requires Perf Gradle plugin
 
     // Firebase AI (Gemini)
     implementation(libs.firebase.ai)

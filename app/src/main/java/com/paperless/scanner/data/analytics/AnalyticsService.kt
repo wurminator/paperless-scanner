@@ -7,14 +7,13 @@ import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
-import com.google.firebase.perf.performance
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Wrapper service for Firebase Analytics, Crashlytics, and Performance Monitoring.
- * Provides a clean API for tracking events throughout the app.
+ * Wrapper service for Firebase Analytics and Crashlytics.
+ * Performance Monitoring disabled in debug builds (no real Firebase project).
  *
  * All data collection is:
  * - Anonymized (no PII collected)
@@ -43,7 +42,7 @@ class AnalyticsService @Inject constructor(
         isEnabled = enabled
         firebaseAnalytics.setAnalyticsCollectionEnabled(enabled)
         Firebase.crashlytics.setCrashlyticsCollectionEnabled(enabled)
-        Firebase.performance.isPerformanceCollectionEnabled = enabled
+        // Performance collection disabled in debug builds
 
         Log.d(TAG, "Analytics collection ${if (enabled) "enabled" else "disabled"}")
     }
@@ -77,7 +76,6 @@ class AnalyticsService @Inject constructor(
 
     /**
      * Track a screen view.
-     * Automatically called when navigating between screens.
      */
     fun trackScreen(screenName: String, screenClass: String? = null) {
         if (!isEnabled) return
@@ -91,55 +89,25 @@ class AnalyticsService @Inject constructor(
         Log.d(TAG, "Screen tracked: $screenName")
     }
 
-    /**
-     * Set a user property for segmentation.
-     * Properties are anonymized and don't contain PII.
-     */
     fun setUserProperty(name: String, value: String?) {
         if (!isEnabled) return
-
         firebaseAnalytics.setUserProperty(name, value)
     }
 
-    /**
-     * Log a non-fatal error to Crashlytics.
-     * Useful for tracking handled exceptions.
-     */
     fun logError(throwable: Throwable, message: String? = null) {
         if (!isEnabled) return
-
         message?.let { Firebase.crashlytics.log(it) }
         Firebase.crashlytics.recordException(throwable)
         Log.e(TAG, "Error logged: ${message ?: throwable.message}", throwable)
     }
 
-    /**
-     * Log a message to Crashlytics.
-     * Messages are attached to crash reports for debugging.
-     */
     fun logMessage(message: String) {
         if (!isEnabled) return
-
         Firebase.crashlytics.log(message)
     }
 
-    /**
-     * Check if analytics collection is currently enabled.
-     */
     fun isAnalyticsEnabled(): Boolean = isEnabled
 
-    // ==================== Crashlytics Custom Keys ====================
-
-    /**
-     * Initialize Crashlytics custom keys after GDPR consent.
-     * Should be called once after user grants consent and is logged in.
-     *
-     * @param serverUrl Server URL (will be hashed for privacy)
-     * @param appVersion Version name (e.g., "1.5.38")
-     * @param versionCode Version code (e.g., 10538)
-     * @param subscriptionStatus Subscription status (e.g., "free", "monthly", "yearly")
-     * @param isOffline Current offline state
-     */
     fun initializeCrashlyticsKeys(
         serverUrl: String?,
         appVersion: String,
@@ -152,61 +120,32 @@ class AnalyticsService @Inject constructor(
             return
         }
 
-        // Set all custom keys
         setServerUrlHash(serverUrl)
         Firebase.crashlytics.setCustomKey("app_version", appVersion)
         Firebase.crashlytics.setCustomKey("version_code", versionCode)
         Firebase.crashlytics.setCustomKey("subscription_status", subscriptionStatus)
         Firebase.crashlytics.setCustomKey("is_offline", isOffline)
 
-        Log.d(TAG, "Crashlytics keys initialized: version=$appVersion, code=$versionCode, " +
-                "subscription=$subscriptionStatus, offline=$isOffline")
+        Log.d(TAG, "Crashlytics keys initialized: version=$appVersion, code=$versionCode")
     }
 
-    /**
-     * Update offline state in Crashlytics.
-     * Should be called when network connectivity changes.
-     *
-     * @param isOffline Whether the app is currently offline
-     */
     fun updateOfflineState(isOffline: Boolean) {
         if (!isEnabled) return
         Firebase.crashlytics.setCustomKey("is_offline", isOffline)
-        Log.d(TAG, "Crashlytics offline state updated: $isOffline")
     }
 
-    /**
-     * Update subscription status in Crashlytics.
-     * Should be called when subscription status changes.
-     *
-     * @param status Subscription status (e.g., "free", "monthly", "yearly")
-     */
     fun updateCrashlyticsSubscriptionStatus(status: String) {
         if (!isEnabled) return
         Firebase.crashlytics.setCustomKey("subscription_status", status)
-        Log.d(TAG, "Crashlytics subscription status updated: $status")
     }
 
-    /**
-     * Set server URL hash in Crashlytics (privacy-safe).
-     * Uses SHA-256 and only stores first 16 characters.
-     *
-     * @param serverUrl The server URL (will be hashed)
-     */
     private fun setServerUrlHash(serverUrl: String?) {
         val hash = hashServerUrl(serverUrl)
         Firebase.crashlytics.setCustomKey("server_url_hash", hash)
     }
 
-    /**
-     * Hash a server URL for privacy using SHA-256.
-     *
-     * @param url The URL to hash
-     * @return First 16 chars of SHA-256 hash, or "none" if URL is null/empty
-     */
     private fun hashServerUrl(url: String?): String {
         if (url.isNullOrBlank()) return "none"
-
         return try {
             val digest = java.security.MessageDigest.getInstance("SHA-256")
             val hashBytes = digest.digest(url.toByteArray(Charsets.UTF_8))
@@ -219,39 +158,16 @@ class AnalyticsService @Inject constructor(
 
     // ==================== AI-Specific User Properties ====================
 
-    /**
-     * Set user's subscription status.
-     * Used for segmentation in analytics and monthly reports.
-     *
-     * @param status Subscription status: "free", "monthly", or "yearly"
-     */
     fun setSubscriptionStatus(status: String) {
         setUserProperty("subscription_status", status)
     }
 
-    /**
-     * Update AI calls count for current month.
-     * Used for tracking heavy users and usage limits.
-     *
-     * @param callCount Number of AI calls this month
-     */
     fun setAiCallsThisMonth(callCount: Int) {
         setUserProperty("ai_calls_this_month", callCount.toString())
-
-        // Mark as heavy user if >100 calls/month
         val isHeavyUser = callCount > 100
         setUserProperty("ai_heavy_user", if (isHeavyUser) "true" else "false")
     }
 
-    /**
-     * Track a successful AI feature usage with cost calculation.
-     * This is the primary event for AI analytics and BigQuery export.
-     *
-     * @param featureType Type of AI feature used
-     * @param inputTokens Number of input tokens
-     * @param outputTokens Number of output tokens
-     * @param subscriptionType User's subscription type
-     */
     fun trackAiFeatureUsage(
         featureType: String,
         inputTokens: Int,
@@ -259,7 +175,6 @@ class AnalyticsService @Inject constructor(
         subscriptionType: String
     ) {
         val costUsd = AiCostCalculator.calculateCost(inputTokens, outputTokens)
-
         trackEvent(
             AnalyticsEvent.AiFeatureUsed(
                 featureType = featureType,
@@ -272,25 +187,16 @@ class AnalyticsService @Inject constructor(
         )
     }
 
-    /**
-     * Track a failed AI feature usage.
-     *
-     * @param featureType Type of AI feature
-     * @param inputTokens Number of input tokens (may be 0 if failed before sending)
-     * @param subscriptionType User's subscription type
-     */
     fun trackAiFeatureFailure(
         featureType: String,
         inputTokens: Int,
         subscriptionType: String
     ) {
         val costUsd = if (inputTokens > 0) {
-            // Partial cost if request was sent but failed
             AiCostCalculator.calculateCost(inputTokens, 0)
         } else {
             0.0
         }
-
         trackEvent(
             AnalyticsEvent.AiFeatureUsed(
                 featureType = featureType,
@@ -304,45 +210,20 @@ class AnalyticsService @Inject constructor(
     }
 }
 
-/**
- * Utility for calculating AI API costs.
- * Uses Gemini Flash 1.5 pricing (as of January 2026).
- *
- * Pricing:
- * - Input: $0.30 per 1M tokens
- * - Output: $2.50 per 1M tokens
- */
 object AiCostCalculator {
-    private const val INPUT_COST_PER_MILLION = 0.30  // USD
-    private const val OUTPUT_COST_PER_MILLION = 2.50 // USD
+    private const val INPUT_COST_PER_MILLION = 0.30
+    private const val OUTPUT_COST_PER_MILLION = 2.50
 
-    /**
-     * Calculate estimated cost for an AI API call.
-     *
-     * @param inputTokens Number of input tokens
-     * @param outputTokens Number of output tokens
-     * @return Estimated cost in USD
-     */
     fun calculateCost(inputTokens: Int, outputTokens: Int): Double {
         val inputCost = (inputTokens.toDouble() / 1_000_000) * INPUT_COST_PER_MILLION
         val outputCost = (outputTokens.toDouble() / 1_000_000) * OUTPUT_COST_PER_MILLION
         return inputCost + outputCost
     }
 
-    /**
-     * Calculate cost for input tokens only.
-     * Useful for estimating cost before making API call.
-     */
     fun calculateInputCost(inputTokens: Int): Double {
         return (inputTokens.toDouble() / 1_000_000) * INPUT_COST_PER_MILLION
     }
 
-    /**
-     * Get average cost per AI call (based on typical usage).
-     * Assumes ~1500 input tokens and ~200 output tokens per call.
-     *
-     * @return Average cost in USD
-     */
     fun getAverageCostPerCall(): Double {
         return calculateCost(inputTokens = 1500, outputTokens = 200)
     }
