@@ -111,6 +111,7 @@ class ScanViewModel @Inject constructor(
     private val networkMonitor: com.paperless.scanner.data.network.NetworkMonitor,
     private val tokenManager: com.paperless.scanner.data.datastore.TokenManager,
     val appLockManager: com.paperless.scanner.util.AppLockManager,
+    private val quickUploadHandler: com.paperless.scanner.quickupload.QuickUploadHandler,
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: Context,
     private val gson: Gson
 ) : ViewModel() {
@@ -904,5 +905,16 @@ class ScanViewModel @Inject constructor(
                 state
             }
         }
+    }
+
+    /**
+     * Batch import: Queue multiple files as individual documents with default metadata.
+     * Uses QuickUploadHandler for validation, dedup, copy-to-local, and queuing.
+     *
+     * @param uris Content URIs from file picker
+     * @return UploadResult with queued/skipped/error counts
+     */
+    suspend fun batchImport(uris: List<Uri>): com.paperless.scanner.quickupload.QuickUploadHandler.UploadResult {
+        return quickUploadHandler.handleQuickUpload(uris)
     }
 }

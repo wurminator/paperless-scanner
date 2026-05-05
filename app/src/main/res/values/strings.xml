@@ -178,6 +178,11 @@
     <string name="scan_option_scan">Scan</string>
     <string name="scan_option_gallery">Gallery</string>
     <string name="scan_option_files">Files</string>
+    <string name="scan_option_batch_import">Batch</string>
+    <string name="batch_import_success">%1$d files queued for upload</string>
+    <string name="batch_import_partial">%1$d queued, %2$d skipped</string>
+    <string name="batch_import_all_skipped">All %1$d files skipped (unsupported format)</string>
+    <string name="batch_import_failed">Batch import failed: %1$s</string>
     <string name="scan_page_count">%1$d / %2$d Pages</string>
     <string name="scan_hold_to_sort">Hold to sort</string>
     <string name="scan_limit_reached">Maximum reached</string>

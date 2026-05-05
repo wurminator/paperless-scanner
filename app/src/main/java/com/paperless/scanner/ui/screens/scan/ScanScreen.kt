@@ -264,6 +264,34 @@ fun ScanScreen(
         }
     }
 
+    // Batch Import Launcher — queues all files as individual documents
+    val batchImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
+        // CRITICAL: Always resume, even if user canceled (uris is empty)
+        viewModel.appLockManager.resumeFromFilePicker()
+
+        if (uris.isNotEmpty()) {
+            scope.launch {
+                val result = viewModel.batchImport(uris)
+                val message = when {
+                    result.queued > 0 && result.skipped == 0 && result.errors.isEmpty() ->
+                        context.getString(R.string.batch_import_success, result.queued)
+                    result.queued > 0 ->
+                        context.getString(R.string.batch_import_partial, result.queued, result.skipped + result.errors.size)
+                    result.skipped > 0 ->
+                        context.getString(R.string.batch_import_all_skipped, result.skipped)
+                    else ->
+                        context.getString(R.string.batch_import_failed, result.errors.firstOrNull() ?: "Unknown error")
+                }
+                snackbarHostState.showTypedSnackbar(
+                    message = message,
+                    icon = if (result.queued > 0) SnackbarIcon.SUCCESS else SnackbarIcon.ERROR
+                )
+            }
+        }
+    }
+
     // Handle undo snackbar for removed pages
     LaunchedEffect(uiState.lastRemovedPage) {
         uiState.lastRemovedPage?.let { removedInfo ->
@@ -391,6 +419,13 @@ fun ScanScreen(
                         filePickerLauncher.launch(
                             arrayOf("application/pdf", "image/*")
                         )
+                    },
+                    onBatchImportClick = {
+                        // CRITICAL: Suspend timeout BEFORE opening picker
+                        viewModel.appLockManager.suspendForFilePicker()
+                        batchImportLauncher.launch(
+                            arrayOf("application/pdf", "image/*")
+                        )
                     }
                 )
             }
@@ -496,7 +531,8 @@ fun ScanScreen(
 private fun ModeSelectionContent(
     onScanClick: () -> Unit,
     onGalleryClick: () -> Unit,
-    onFilesClick: () -> Unit
+    onFilesClick: () -> Unit,
+    onBatchImportClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -520,44 +556,65 @@ private fun ModeSelectionContent(
             )
         }
 
-        // Options Row
-        Row(
+        // Options Grid (2x2)
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
                 .padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Scan option - uses onPrimary for proper contrast in both themes
-            ScanOptionCard(
-                icon = Icons.Filled.CameraAlt,
-                label = stringResource(R.string.scan_option_scan),
-                backgroundColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                onClick = onScanClick,
-                modifier = Modifier.weight(1f)
-            )
+            // Row 1: Camera + Gallery
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Scan option - uses onPrimary for proper contrast in both themes
+                ScanOptionCard(
+                    icon = Icons.Filled.CameraAlt,
+                    label = stringResource(R.string.scan_option_scan),
+                    backgroundColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    onClick = onScanClick,
+                    modifier = Modifier.weight(1f)
+                )
 
-            // Gallery option - always light blue, needs dark text
-            ScanOptionCard(
-                icon = Icons.Filled.PhotoLibrary,
-                label = stringResource(R.string.scan_option_gallery),
-                backgroundColor = Color(0xFF8DD7FF),
-                contentColor = Color.Black,
-                onClick = onGalleryClick,
-                modifier = Modifier.weight(1f)
-            )
+                // Gallery option - always light blue, needs dark text
+                ScanOptionCard(
+                    icon = Icons.Filled.PhotoLibrary,
+                    label = stringResource(R.string.scan_option_gallery),
+                    backgroundColor = Color(0xFF8DD7FF),
+                    contentColor = Color.Black,
+                    onClick = onGalleryClick,
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
-            // Files option - always light purple, needs dark text
-            ScanOptionCard(
-                icon = Icons.Filled.FolderOpen,
-                label = stringResource(R.string.scan_option_files),
-                backgroundColor = Color(0xFFB88DFF),
-                contentColor = Color.Black,
-                onClick = onFilesClick,
-                modifier = Modifier.weight(1f)
-            )
+            // Row 2: Files + Batch Import
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Files option - always light purple, needs dark text
+                ScanOptionCard(
+                    icon = Icons.Filled.FolderOpen,
+                    label = stringResource(R.string.scan_option_files),
+                    backgroundColor = Color(0xFFB88DFF),
+                    contentColor = Color.Black,
+                    onClick = onFilesClick,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Batch Import option - teal/green accent
+                ScanOptionCard(
+                    icon = Icons.Filled.Add,
+                    label = stringResource(R.string.scan_option_batch_import),
+                    backgroundColor = Color(0xFF4DB6AC),
+                    contentColor = Color.Black,
+                    onClick = onBatchImportClick,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(100.dp)) // Space for bottom nav
