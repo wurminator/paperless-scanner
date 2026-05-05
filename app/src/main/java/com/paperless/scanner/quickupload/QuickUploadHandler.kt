@@ -45,7 +45,9 @@ class QuickUploadHandler @Inject constructor(
     @ApplicationContext private val context: Context,
     private val uploadQueueRepository: UploadQueueRepository,
     private val uploadWorkManager: UploadWorkManager,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val tagMatchingEngine: com.paperless.scanner.data.ai.TagMatchingEngine,
+    private val tagRepository: com.paperless.scanner.data.repository.TagRepository
 ) {
     // Result tracking for the current batch
     data class UploadResult(
@@ -105,12 +107,28 @@ class QuickUploadHandler @Inject constructor(
                 continue
             }
 
-            // 3. Copy to local + queue
+            // 3. Copy to local + auto-tag + queue
             try {
                 val localUri = copyToLocal(uri)
+
+                // Auto-tag: match filename against server tag rules
+                val autoTagIds = try {
+                    val tags = tagRepository.getTags().getOrDefault(emptyList())
+                    val suggestions = tagMatchingEngine.findMatchingTags(fileName, tags)
+                    suggestions.mapNotNull { it.tagId }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Auto-tag failed for $fileName, uploading without tags", e)
+                    emptyList()
+                }
+
+                if (autoTagIds.isNotEmpty()) {
+                    Log.d(TAG, "Auto-tagged '$fileName' with ${autoTagIds.size} tag(s)")
+                }
+
                 uploadQueueRepository.queueUpload(
                     uri = localUri,
-                    title = fileName
+                    title = fileName,
+                    tagIds = autoTagIds
                 )
                 queued++
                 Log.d(TAG, "Queued: $fileName")
